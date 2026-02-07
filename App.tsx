@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Search, Map as MapIcon } from 'lucide-react';
+import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Search, Info, Map as MapIcon, LocateFixed } from 'lucide-react';
 import { SectionCard, InputField, SearchableSelect } from './components/Layout';
 import { MapDashboard } from './components/MapDashboard';
 import { DistributionMap } from './components/DistributionMap';
-import { WelcomePopup } from './components/WelcomePopup'; // استيراد المكون الجديد
+import { WelcomePopup } from './components/WelcomePopup';
 import { FormData, UrgencyLevel, URGENCY_LABELS } from './types';
 import { submitFormData } from './services/api';
 import { fetchAdminData, fetchSubmittedLogs, AdminRow, SubmissionRow } from './services/data';
@@ -12,7 +12,7 @@ import { fetchAdminData, fetchSubmittedLogs, AdminRow, SubmissionRow } from './s
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'form' | 'dashboard' | 'map'>('form');
   const [showDistMap, setShowDistMap] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true); // حالة ظهور النافذة الترحيبية
+  const [showWelcome, setShowWelcome] = useState(true);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -128,12 +128,18 @@ const App: React.FC = () => {
       {showWelcome && <WelcomePopup onClose={() => setShowWelcome(false)} />}
 
       <nav className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-[1001] shadow-sm">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('form')}>
-            <div className="bg-rose-500 p-1.5 rounded-lg text-white">
-              <ShieldAlert size={20} />
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('form')}>
+              <div className="bg-rose-500 p-1.5 rounded-lg text-white">
+                <ShieldAlert size={20} />
+              </div>
+              <span className="font-black text-slate-800 tracking-tight">رصد الميدان</span>
             </div>
-            <span className="font-black text-slate-800 tracking-tight hidden sm:inline">رصد الميدان</span>
+            <div className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1.5">
+               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+               <span className="text-[10px] font-black uppercase tracking-tight">صفحة غير رسمية</span>
+            </div>
           </div>
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl">
              <button onClick={() => setCurrentView('form')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'form' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-rose-500'}`}>التبليغ عن دوار</button>
@@ -147,10 +153,6 @@ const App: React.FC = () => {
         <>
           <header className="bg-rose-600 text-white pt-16 pb-24 px-6 text-center">
             <div className="max-w-4xl mx-auto">
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full mb-6 mx-auto">
-                <div className="w-2 h-2 rounded-full bg-rose-300 animate-pulse"></div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/90">صفحة غير رسمية</span>
-              </div>
               <h1 className="text-4xl font-black mb-3">التبليغ عن دوار متضرر</h1>
               <p className="text-rose-100 font-medium opacity-90">نظام الربط الجغرافي والإحصائي الموحد لجمع المعطيات</p>
             </div>
@@ -158,21 +160,28 @@ const App: React.FC = () => {
           <main className="max-w-3xl mx-auto w-full px-6 -mt-16">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="bg-[#eefdf5] border border-[#dcfce7] rounded-3xl p-5 flex flex-col gap-5 shadow-sm">
-                 <div className="flex items-center justify-between gap-4">
+                 <div className="flex items-center justify-between gap-4 text-right">
                     <button 
                       type="button" 
                       onClick={() => window.open(formData.lien_maps, '_blank')} 
-                      className="bg-white p-2 rounded-xl border border-[#107c41]/20 flex items-center justify-center hover:bg-emerald-50 transition-all shadow-sm shrink-0 aspect-square w-11"
-                      title="عرض على خرائط جوجل"
+                      className="bg-white p-2.5 rounded-xl border border-blue-100 flex items-center justify-center hover:bg-blue-50 transition-all shadow-sm shrink-0 aspect-square w-12 text-blue-400"
+                      title="عرض الموقع على الخريطة"
                     >
-                      <img src="https://www.google.com/images/branding/product/ico/maps15_24dp.ico" alt="Maps" className="w-6 h-6" />
+                      <LocateFixed size={24} />
                     </button>
                     
-                    <div className="flex items-center gap-2 text-right overflow-hidden">
-                        <span className="text-[13px] font-bold text-[#107c41] whitespace-nowrap overflow-hidden text-ellipsis">
-                           تم تحديد موقعك: ({formData.latitude}, {formData.longitude})
-                        </span>
-                        <div className="text-[#107c41] shrink-0"><MapPin size={22} /></div>
+                    <div className="flex items-center gap-3 text-right overflow-hidden flex-1">
+                        <div className="flex flex-col text-right">
+                          <span className="text-[13px] font-black text-[#107c41] whitespace-nowrap overflow-hidden text-ellipsis">
+                             الإحداثيات المرصودة
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-600/80 dir-ltr">
+                             {formData.latitude}, {formData.longitude}
+                          </span>
+                        </div>
+                        <div className="bg-emerald-500/10 p-2 rounded-xl text-[#107c41] shrink-0">
+                          <MapPin size={22} />
+                        </div>
                     </div>
                  </div>
                  
@@ -320,6 +329,17 @@ const App: React.FC = () => {
           </div>
         </main>
       )}
+
+      {/* Persistent Info Button to reopen Welcome Popup (Small size as requested) */}
+      <div className="fixed bottom-24 right-8 z-[1002]">
+        <button 
+          onClick={() => setShowWelcome(true)}
+          className="bg-white text-rose-600 p-2.5 rounded-full shadow-lg border border-rose-100 hover:bg-rose-50 transition-all active:scale-90 flex items-center justify-center"
+          title="معلومات المنصة"
+        >
+          <Info size={16} />
+        </button>
+      </div>
 
       {/* أيقونة عائمة لفتح خريطة التوزيع التفاعلية */}
       <div className="fixed bottom-8 left-8 z-[1002]">
