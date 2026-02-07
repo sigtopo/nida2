@@ -4,6 +4,7 @@ import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLi
 import { SectionCard, InputField, SearchableSelect } from './components/Layout';
 import { MapDashboard } from './components/MapDashboard';
 import { DistributionMap } from './components/DistributionMap';
+import { WelcomePopup } from './components/WelcomePopup'; // استيراد المكون الجديد
 import { FormData, UrgencyLevel, URGENCY_LABELS } from './types';
 import { submitFormData } from './services/api';
 import { fetchAdminData, fetchSubmittedLogs, AdminRow, SubmissionRow } from './services/data';
@@ -11,6 +12,7 @@ import { fetchAdminData, fetchSubmittedLogs, AdminRow, SubmissionRow } from './s
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'form' | 'dashboard' | 'map'>('form');
   const [showDistMap, setShowDistMap] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true); // حالة ظهور النافذة الترحيبية
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -122,6 +124,9 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col antialiased pb-20 relative">
+      {/* النافذة الترحيبية */}
+      {showWelcome && <WelcomePopup onClose={() => setShowWelcome(false)} />}
+
       <nav className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-[1001] shadow-sm">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('form')}>
