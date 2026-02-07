@@ -16,7 +16,6 @@ export const MapDashboard: React.FC<MapDashboardProps> = ({ logs, userLat, userL
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // تهيئة الخريطة حسب الإعدادات المطلوبة
     const map = L.map(mapContainerRef.current, {
       zoomControl: true,
       scrollWheelZoom: false,
@@ -24,27 +23,25 @@ export const MapDashboard: React.FC<MapDashboardProps> = ({ logs, userLat, userL
       minZoom: 12,
       maxZoom: 12,
       dragging: true
-    }).setView([34.5, -6.0], 12);
+    }).setView([34.33, -6.13], 12);
     
     mapRef.current = map;
 
-    // طبقة أساسية خفيفة
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    // 🌊 طبقة الفيضانات كخلفية (تظهر بسرعة لأن الزووم ثابت)
     L.tileLayer('https://geotoposig.com/zones_inondables/12/{x}/{y}.png', {
-      opacity: 1,
-      attribution: 'Flood Zones Data'
+      opacity: 0.9,
+      attribution: 'Flood Zones Data - GeoTopoSIG'
     }).addTo(map);
 
-    // أيقونة الموقع الحالي
     if (userLat && userLng) {
       const userIcon = L.divIcon({
         className: 'user-location-ping',
-        html: `<div class="relative flex h-5 w-5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-5 w-5 bg-blue-600 border-2 border-white shadow-md"></span></div>`,
-        iconSize: [20, 20]
+        html: `<div class="relative flex h-6 w-6"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex rounded-full h-6 w-6 bg-blue-600 border-4 border-white shadow-lg"></span></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
       });
       L.marker([userLat, userLng], { icon: userIcon }).addTo(map).bindPopup("<b>موقعك الحالي</b>");
     }
@@ -53,29 +50,25 @@ export const MapDashboard: React.FC<MapDashboardProps> = ({ logs, userLat, userL
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [userLat, userLng]);
 
-  // إضافة النقاط المسجلة
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
 
     logs.forEach(log => {
       if (!log.locationXY) return;
-      
       const parts = log.locationXY.split(',');
       if (parts.length < 2) return;
-      
       const lat = parseFloat(parts[0]);
       const lng = parseFloat(parts[1]);
-      
       if (isNaN(lat) || isNaN(lng)) return;
 
       let color = "#64748b";
-      if (log.urgency.includes('حرج') || log.urgency.includes('٤')) color = "#ef4444";
-      else if (log.urgency.includes('مرتفع') || log.urgency.includes('٣')) color = "#f97316";
-      else if (log.urgency.includes('متوسط') || log.urgency.includes('٢')) color = "#fbbf24";
-      else if (log.urgency.includes('منخفض') || log.urgency.includes('١')) color = "#10b981";
+      if (log.urgency.includes('حرج') || log.urgency.includes('4')) color = "#ef4444";
+      else if (log.urgency.includes('مرتفع') || log.urgency.includes('3')) color = "#f97316";
+      else if (log.urgency.includes('متوسط') || log.urgency.includes('2')) color = "#fbbf24";
+      else if (log.urgency.includes('منخفض') || log.urgency.includes('1')) color = "#10b981";
 
       const marker = L.circleMarker([lat, lng], {
         radius: 8,
@@ -104,34 +97,14 @@ export const MapDashboard: React.FC<MapDashboardProps> = ({ logs, userLat, userL
   return (
     <div className="relative h-full w-full bg-slate-100">
       <div ref={mapContainerRef} id="map" className="h-full w-full" />
-      
-      {/* مفتاح الخريطة المحدث - شفافية 50% */}
-      <div className="absolute top-4 right-4 z-[1000] bg-white/50 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 max-w-[240px]">
-        <h3 className="text-[11px] font-black text-blue-900 mb-3 flex items-center gap-2 text-right">
-          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-          مفتاح الخريطة
-        </h3>
-        
+      <div className="absolute top-4 right-4 z-[1000] bg-white/70 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-white/20 max-w-[240px]">
+        <h3 className="text-[11px] font-black text-slate-800 mb-3 text-right">مفتاح الخريطة</h3>
         <div className="flex flex-col gap-2.5 text-right">
-           <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-800">
-              مناطق مغمورة بالمياه <div className="w-3 h-3 rounded bg-[#3b82f6] shadow-sm"></div>
-           </div>
-           <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-800">
-              حدود الجماعات <div className="w-3 h-3 rounded bg-[#32E02D] shadow-sm"></div>
-           </div>
-           <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-800">
-              الشبكة المائية <div className="w-3 h-3 rounded bg-[#134CDD] shadow-sm"></div>
-           </div>
-           <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-800">
-              مسافة 1 كلم عن الواد <div className="w-3 h-3 rounded bg-[#B74840] shadow-sm"></div>
-           </div>
-           
-           <div className="pt-2 mt-1 border-t border-slate-900/10">
-              <div className="flex items-center justify-end gap-2 text-[10px] font-black text-rose-600">
-                 نقطة تدخل حرج <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-              </div>
-           </div>
+           <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-600">
+              مناطق مغمورة <div className="w-3 h-3 rounded bg-blue-500/60 shadow-sm border border-blue-400"></div>
+         
         </div>
+        <div className="mt-4 pt-2 border-t border-slate-200 text-[9px] text-slate-400 font-bold text-center italic">الزووم مثبت عند 12</div>
       </div>
     </div>
   );

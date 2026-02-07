@@ -32,6 +32,17 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
+      
+      /* تأثير الوميض للماركرات */
+      @keyframes blink {
+        0% { opacity: 1; stroke-width: 2; }
+        50% { opacity: 0.4; stroke-width: 6; }
+        100% { opacity: 1; stroke-width: 2; }
+      }
+      .blinking-marker {
+        animation: blink 1.5s infinite ease-in-out;
+      }
+
       #map { height: 600px; width: 100%; border-radius: 1.5rem; z-index: 10; }
       .leaflet-popup-content-wrapper { border-radius: 1rem; padding: 5px; font-family: 'Tajawal', sans-serif; }
       .leaflet-control-layers { border-radius: 1rem !important; border: none !important; shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important; }

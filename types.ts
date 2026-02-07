@@ -21,8 +21,8 @@ export interface FormData {
 }
 
 export const URGENCY_LABELS: Record<UrgencyLevel, string> = {
-  [UrgencyLevel.LOW]: '١- منخفض',
-  [UrgencyLevel.MEDIUM]: '٢- متوسط',
-  [UrgencyLevel.HIGH]: '٣- مرتفع',
-  [UrgencyLevel.CRITICAL]: '٤- حرج جداً'
+  [UrgencyLevel.LOW]: '1- منخفض',
+  [UrgencyLevel.MEDIUM]: '2- متوسط',
+  [UrgencyLevel.HIGH]: '3- مرتفع',
+  [UrgencyLevel.CRITICAL]: '4- حرج جداً'
 };
