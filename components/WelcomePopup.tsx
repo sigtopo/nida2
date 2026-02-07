@@ -40,7 +40,7 @@ export const WelcomePopup: React.FC<WelcomePopupProps> = ({ onClose }) => {
           </h2>
           
           <p className="text-slate-600 leading-relaxed font-medium mb-5 text-center text-[11px] sm:text-xs">
-            تم إنشاء هذه المنصة لدعم ضحايا الفيضانات والمتضررين العالقين، وتسهيل وصول فرق الإنقاذ إلى المناطق الأكثر حاجة.
+            تم إنشاء هذه المنصة لرصد ضحايا الفيضانات والمتضررين العالقين، وتسهيل وصول فرق الإنقاذ إلى المناطق الأكثر حاجة.
           </p>
 
           <div className="grid gap-2 sm:gap-3 mb-6">
