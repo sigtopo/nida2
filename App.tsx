@@ -31,10 +31,15 @@ const App: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       setDataLoading(true);
-      const [admin, logs] = await Promise.all([fetchAdminData(), fetchSubmittedLogs()]);
-      setAllAdminData(admin);
-      setSubmittedLogs(logs);
-      setDataLoading(false);
+      try {
+        const [admin, logs] = await Promise.all([fetchAdminData(), fetchSubmittedLogs()]);
+        setAllAdminData(admin || []);
+        setSubmittedLogs(logs || []);
+      } catch (err) {
+        console.error("Failed to load initial data", err);
+      } finally {
+        setDataLoading(false);
+      }
     };
     loadData();
   }, []);
@@ -42,25 +47,43 @@ const App: React.FC = () => {
   const refreshLogs = async () => {
     setLogsLoading(true);
     const logs = await fetchSubmittedLogs();
-    setSubmittedLogs(logs);
+    setSubmittedLogs(logs || []);
     setLogsLoading(false);
   };
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      setFormData(prev => ({
-        ...prev,
-        latitude: pos.coords.latitude.toFixed(6),
-        longitude: pos.coords.longitude.toFixed(6),
-        lien_maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
-      }));
-    }, null, { enableHighAccuracy: true });
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setFormData(prev => ({
+          ...prev,
+          latitude: pos.coords.latitude.toFixed(6),
+          longitude: pos.coords.longitude.toFixed(6),
+          lien_maps: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`
+        }));
+      }, null, { enableHighAccuracy: true });
+    }
   }, []);
 
-  const regions = useMemo(() => Array.from(new Set(allAdminData.map(r => r.region))).sort(), [allAdminData]);
-  const provinces = useMemo(() => !formData.region ? [] : Array.from(new Set(allAdminData.filter(r => r.region === formData.region).map(r => r.province))).sort(), [allAdminData, formData.region]);
-  const communes = useMemo(() => !formData.province ? [] : Array.from(new Set(allAdminData.filter(r => r.province === formData.province).map(r => r.commune))).sort(), [allAdminData, formData.province]);
-  const douars = useMemo(() => !formData.commune ? [] : Array.from(new Set(allAdminData.filter(r => r.commune === formData.commune).map(r => r.douar))).sort(), [allAdminData, formData.commune]);
+  // Memoized lists for the searchable selects with extra safety filtering
+  const regions = useMemo(() => 
+    Array.from(new Set(allAdminData.map(r => r.region).filter(Boolean))).sort() as string[], 
+    [allAdminData]
+  );
+  
+  const provinces = useMemo(() => 
+    !formData.region ? [] : Array.from(new Set(allAdminData.filter(r => r.region === formData.region).map(r => r.province).filter(Boolean))).sort() as string[], 
+    [allAdminData, formData.region]
+  );
+  
+  const communes = useMemo(() => 
+    !formData.province ? [] : Array.from(new Set(allAdminData.filter(r => r.province === formData.province).map(r => r.commune).filter(Boolean))).sort() as string[], 
+    [allAdminData, formData.province]
+  );
+  
+  const douars = useMemo(() => 
+    !formData.commune ? [] : Array.from(new Set(allAdminData.filter(r => r.commune === formData.commune).map(r => r.douar).filter(Boolean))).sort() as string[], 
+    [allAdminData, formData.commune]
+  );
 
   const updateField = (field: keyof FormData, value: any) => {
     setFormData(prev => {
@@ -139,7 +162,7 @@ const App: React.FC = () => {
           </div>
         ) : currentView === 'floodMap' ? (
           <div className="animate-fade-in -mx-4 -mt-8 sm:mx-0 sm:mt-0">
-            <FloodMap userLat={parseFloat(formData.latitude)} userLng={parseFloat(formData.longitude)} />
+            <FloodMap userLat={parseFloat(formData.latitude || '0')} userLng={parseFloat(formData.longitude || '0')} />
           </div>
         ) : (
           <div className="animate-fade-in">
@@ -189,7 +212,7 @@ const App: React.FC = () => {
                  </div>
               </div>
               <div className="flex-1 relative">
-                 <MapDashboard logs={submittedLogs} userLat={parseFloat(formData.latitude)} userLng={parseFloat(formData.longitude)} />
+                 <MapDashboard logs={submittedLogs} userLat={parseFloat(formData.latitude || '0')} userLng={parseFloat(formData.longitude || '0')} />
               </div>
            </div>
         </div>
