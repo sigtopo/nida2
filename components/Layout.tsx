@@ -33,7 +33,7 @@ export const InputField: React.FC<{
     </label>
     {multiline ? (
       <textarea
-        value={value || ''}
+        value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
@@ -42,7 +42,7 @@ export const InputField: React.FC<{
     ) : (
       <input
         type={type}
-        value={value || ''}
+        value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
@@ -74,13 +74,9 @@ export const SearchableSelect: React.FC<{
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const safeValue = value || '';
-  const safeOptions = options || [];
-
-  const filteredOptions = safeOptions.filter(opt => {
-    if (typeof opt !== 'string') return false;
-    return opt.toLowerCase().includes(safeValue.toLowerCase());
-  });
+  const filteredOptions = options.filter(opt => 
+    opt.toLowerCase().includes(value.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col gap-1.5 relative" ref={containerRef}>
@@ -90,7 +86,7 @@ export const SearchableSelect: React.FC<{
       <div className="relative">
         <input
           type="text"
-          value={safeValue}
+          value={value}
           onChange={(e) => {
             onChange(e.target.value);
             setIsOpen(true);
@@ -117,7 +113,7 @@ export const SearchableSelect: React.FC<{
                   setIsOpen(false);
                 }}
                 className={`w-full text-right px-4 py-2.5 hover:bg-rose-50 text-sm transition-colors ${
-                  safeValue === opt ? 'bg-rose-50 text-rose-600 font-bold' : 'text-slate-600'
+                  value === opt ? 'bg-rose-50 text-rose-600 font-bold' : 'text-slate-600'
                 }`}
               >
                 {opt}
@@ -126,7 +122,7 @@ export const SearchableSelect: React.FC<{
           ) : (
             <div className="px-4 py-3 text-slate-400 italic text-xs flex items-center gap-2">
               <Plus size={14} />
-              <span>إضافة جديد: "{safeValue}"</span>
+              <span>إضافة جديد: "{value}"</span>
             </div>
           )}
         </div>

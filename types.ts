@@ -18,9 +18,6 @@ export interface FormData {
   latitude: string;
   longitude: string;
   lien_maps: string;
-  // الحقول الجديدة لنقاط الخريطة
-  nom_point?: string;
-  point_xy?: string;
 }
 
 export const URGENCY_LABELS: Record<UrgencyLevel, string> = {

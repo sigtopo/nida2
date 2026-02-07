@@ -23,7 +23,6 @@ const ADMIN_DATA_URL = 'https://docs.google.com/spreadsheets/d/1EWdDVYYX7P5TcZEl
 const LOG_DATA_URL = 'https://docs.google.com/spreadsheets/d/1Hsk6Ja7yB8ELZG8jj_C5zQQrc7p6s2n2aX-pml89f3k/export?format=csv';
 
 function parseCSVLine(line: string): string[] {
-  if (!line) return [];
   const result: string[] = [];
   let cell = '';
   let inQuotes = false;
@@ -40,30 +39,21 @@ function parseCSVLine(line: string): string[] {
 export const fetchAdminData = async (): Promise<AdminRow[]> => {
   try {
     const response = await fetch(ADMIN_DATA_URL);
-    if (!response.ok) throw new Error('Network response was not ok');
     const text = await response.text();
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
     return lines.slice(1).map(line => {
       const cols = parseCSVLine(line);
-      return { 
-        region: cols[0] || '', 
-        province: cols[1] || '', 
-        commune: cols[2] || '', 
-        douar: cols[3] || '' 
-      };
+      return { region: cols[0], province: cols[1], commune: cols[2], douar: cols[3] };
     });
-  } catch (e) { 
-    console.error('Error fetching admin data:', e);
-    return []; 
-  }
+  } catch (e) { return []; }
 };
 
 export const fetchSubmittedLogs = async (): Promise<SubmissionRow[]> => {
   try {
     const response = await fetch(LOG_DATA_URL);
-    if (!response.ok) throw new Error('Network response was not ok');
     const text = await response.text();
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    // تجاوز السطر الأول (العناوين)
     return lines.slice(1).map(line => {
       const cols = parseCSVLine(line);
       return {
@@ -79,8 +69,5 @@ export const fetchSubmittedLogs = async (): Promise<SubmissionRow[]> => {
         mapLink: cols[9] || ''
       };
     });
-  } catch (e) { 
-    console.error('Error fetching logs:', e);
-    return []; 
-  }
+  } catch (e) { return []; }
 };
