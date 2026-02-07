@@ -33,20 +33,20 @@ export const InputField: React.FC<{
     </label>
     {multiline ? (
       <textarea
-        value={value}
+        value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full p-4 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/5 outline-none transition-all min-h-[100px] bg-white text-slate-700 placeholder:text-slate-300 text-sm disabled:bg-slate-50"
+        className="w-full p-4 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/5 outline-none transition-all min-h-[100px] bg-white text-slate-700 placeholder:text-slate-300 text-sm disabled:bg-slate-50 text-right"
       />
     ) : (
       <input
         type={type}
-        value={value}
+        value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full p-4 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/5 outline-none transition-all bg-white text-slate-700 placeholder:text-slate-300 text-sm disabled:bg-slate-50"
+        className="w-full p-4 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/5 outline-none transition-all bg-white text-slate-700 placeholder:text-slate-300 text-sm disabled:bg-slate-50 text-right"
       />
     )}
   </div>
@@ -74,9 +74,13 @@ export const SearchableSelect: React.FC<{
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredOptions = options.filter(opt => 
-    opt.toLowerCase().includes(value.toLowerCase())
-  );
+  const safeValue = value || '';
+  const safeOptions = options || [];
+
+  const filteredOptions = safeOptions.filter(opt => {
+    if (!opt) return false;
+    return opt.toLowerCase().includes(safeValue.toLowerCase());
+  });
 
   return (
     <div className="flex flex-col gap-1.5 relative" ref={containerRef}>
@@ -86,7 +90,7 @@ export const SearchableSelect: React.FC<{
       <div className="relative">
         <input
           type="text"
-          value={value}
+          value={safeValue}
           onChange={(e) => {
             onChange(e.target.value);
             setIsOpen(true);
@@ -94,7 +98,7 @@ export const SearchableSelect: React.FC<{
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder || 'ابحث أو اكتب...'}
           disabled={disabled}
-          className="w-full p-4 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/5 outline-none transition-all bg-white text-slate-700 placeholder:text-slate-300 text-sm disabled:bg-slate-50"
+          className="w-full p-4 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/5 outline-none transition-all bg-white text-slate-700 placeholder:text-slate-300 text-sm disabled:bg-slate-50 text-right"
         />
         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
            <ChevronDown size={18} />
@@ -102,7 +106,7 @@ export const SearchableSelect: React.FC<{
       </div>
 
       {isOpen && !disabled && (
-        <div className="absolute top-full left-0 w-full bg-white border border-slate-100 rounded-xl mt-1 shadow-xl z-[100] max-h-48 overflow-y-auto custom-scrollbar">
+        <div className="absolute top-full left-0 w-full bg-white border border-slate-100 rounded-xl mt-1 shadow-xl z-[100] max-h-48 overflow-y-auto custom-scrollbar text-right">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((opt) => (
               <button
@@ -113,16 +117,16 @@ export const SearchableSelect: React.FC<{
                   setIsOpen(false);
                 }}
                 className={`w-full text-right px-4 py-2.5 hover:bg-rose-50 text-sm transition-colors ${
-                  value === opt ? 'bg-rose-50 text-rose-600 font-bold' : 'text-slate-600'
+                  safeValue === opt ? 'bg-rose-50 text-rose-600 font-bold' : 'text-slate-600'
                 }`}
               >
                 {opt}
               </button>
             ))
           ) : (
-            <div className="px-4 py-3 text-slate-400 italic text-xs flex items-center gap-2">
+            <div className="px-4 py-3 text-slate-400 italic text-xs flex items-center justify-end gap-2">
+              <span>إضافة جديد: "{safeValue}"</span>
               <Plus size={14} />
-              <span>إضافة جديد: "{value}"</span>
             </div>
           )}
         </div>

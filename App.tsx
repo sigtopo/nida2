@@ -216,7 +216,7 @@ const App: React.FC = () => {
                 </button>
                 <div className="text-right">
                   <h1 className="text-2xl font-black text-slate-800">التوزيع الجغرافي والمناطق المهددة</h1>
-                  <p className="text-sm text-slate-500 font-medium">عرض البلاغات فوق طبقة مناطق الفيضانات والسيول</p>
+                  <p className="text-sm text-slate-500 font-medium">Sources des données : Sentinel-1 SAR (VV & VH, Copernicus, GEE), HCP, OSM / QGIS, Geotoposig </p>
                 </div>
              </div>
           </header>
