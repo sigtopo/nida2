@@ -102,7 +102,7 @@ export const MapDashboard: React.FC<MapDashboardProps> = ({ logs, userLat, userL
         <div className="flex flex-col gap-2.5 text-right">
            <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-600">
               مناطق مغمورة <div className="w-3 h-3 rounded bg-blue-500/60 shadow-sm border border-blue-400"></div>
-         
+           </div>
         </div>
         <div className="mt-4 pt-2 border-t border-slate-200 text-[9px] text-slate-400 font-bold text-center italic">الزووم مثبت عند 12</div>
       </div>

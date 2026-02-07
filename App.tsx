@@ -147,25 +147,36 @@ const App: React.FC = () => {
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/90">صفحة غير رسمية</span>
               </div>
               <h1 className="text-4xl font-black mb-3">التبليغ عن دوار متضرر</h1>
-              <p className="text-rose-100 font-medium opacity-90"> نظام الربط الجغرافي والإحصائي الموحد لجمع المعطيات</p>
+              <p className="text-rose-100 font-medium opacity-90">نظام الربط الجغرافي والإحصائي الموحد لجمع المعطيات</p>
             </div>
           </header>
           <main className="max-w-3xl mx-auto w-full px-6 -mt-16">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="bg-[#eefdf5] border border-[#dcfce7] rounded-3xl p-6 flex flex-col gap-4 shadow-sm">
-                 <div className="flex items-center justify-between">
-                    <button type="button" onClick={() => window.open(formData.lien_maps, '_blank')} className="bg-white px-5 py-2 rounded-xl text-xs font-bold text-emerald-600 border border-emerald-100 hover:bg-emerald-50 transition-colors">عرض الموقع</button>
-                    <div className="flex items-center gap-3 text-right">
-                        <div className="text-right">
-                          <h3 className="text-sm font-bold text-emerald-800">الموقع الجغرافي التلقائي</h3>
-                          <p className="text-[11px] text-emerald-600 font-medium">{formData.latitude}, {formData.longitude}</p>
-                        </div>
-                        <div className="bg-emerald-500 p-2.5 rounded-full text-white"><MapPin size={20} /></div>
+              <div className="bg-[#eefdf5] border border-[#dcfce7] rounded-3xl p-5 flex flex-col gap-5 shadow-sm">
+                 <div className="flex items-center justify-between gap-4">
+                    <button 
+                      type="button" 
+                      onClick={() => window.open(formData.lien_maps, '_blank')} 
+                      className="bg-white p-2 rounded-xl border border-[#107c41]/20 flex items-center justify-center hover:bg-emerald-50 transition-all shadow-sm shrink-0 aspect-square w-11"
+                      title="عرض على خرائط جوجل"
+                    >
+                      <img src="https://www.google.com/images/branding/product/ico/maps15_24dp.ico" alt="Maps" className="w-6 h-6" />
+                    </button>
+                    
+                    <div className="flex items-center gap-2 text-right overflow-hidden">
+                        <span className="text-[13px] font-bold text-[#107c41] whitespace-nowrap overflow-hidden text-ellipsis">
+                           تم تحديد موقعك: ({formData.latitude}, {formData.longitude})
+                        </span>
+                        <div className="text-[#107c41] shrink-0"><MapPin size={22} /></div>
                     </div>
                  </div>
-                 <p className="text-[11px] text-slate-500 font-bold text-center border-t border-emerald-100 pt-3">
-                   الرجاء إدخال المعطيات بدقة لمساعدة فرق الطوارئ والمجتمع المدني
-                 </p>
+                 
+                 <div className="flex items-start gap-2 bg-white/50 px-4 py-3 rounded-2xl border border-emerald-100/50">
+                    <AlertCircle size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-emerald-700 font-black leading-relaxed">
+                      الرجاء إدخال المعطيات بدقة لمساعدة فرق الطوارئ والمجتمع المدني
+                    </p>
+                 </div>
               </div>
               <SectionCard title="التموقع الإداري" number="1.">
                 {dataLoading ? (
@@ -202,7 +213,7 @@ const App: React.FC = () => {
               </SectionCard>
               <button type="submit" disabled={loading} className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 text-lg font-black transition-all shadow-xl active:scale-95 ${loading ? "bg-slate-300 text-slate-500" : "bg-[#0f172a] text-white hover:bg-slate-800"}`}>
                 {loading ? <RefreshCw className="animate-spin" /> : <Send size={22} className="-rotate-45" />}
-                <span>تأكيد البلاغ</span>
+                <span>التبليغ بدوار مهدد</span>
               </button>
               {success && <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl border border-emerald-100 text-center font-bold flex items-center justify-center gap-2 animate-fade-in"><CheckCircle2 size={20} /> تم إرسال البلاغ بنجاح</div>}
               {error && <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl border border-rose-100 text-center font-bold flex items-center justify-center gap-2 animate-fade-in"><AlertCircle size={20} /> {error}</div>}
