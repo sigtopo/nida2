@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Info, Map as MapIcon, LocateFixed, Search } from 'lucide-react';
+import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Info, Map as MapIcon, LocateFixed, Search, Database, FileEdit } from 'lucide-react';
 import { SectionCard, InputField, SearchableSelect } from './components/Layout';
 import { MapDashboard } from './components/MapDashboard';
 import { DistributionMap } from './components/DistributionMap';
@@ -30,7 +30,6 @@ const App: React.FC = () => {
     latitude: '', longitude: '', lien_maps: ''
   });
 
-  // قائمة الجهات المعتمدة حصرياً
   const ALLOWED_REGIONS = [
     'الرباط - سلا - القنيطرة',
     'طنجة - تطوان - الحسيمة',
@@ -38,7 +37,6 @@ const App: React.FC = () => {
     'الشرق'
   ];
 
-  // جلب البيانات الأولية عند التشغيل
   useEffect(() => {
     const loadInitialData = async () => {
       setDataLoading(true);
@@ -71,17 +69,12 @@ const App: React.FC = () => {
     );
   }, [submittedLogs, searchTerm]);
 
-  // --- منطق الفلترة الهرمية الصارم (Cascading Logic) ---
-  
-  // 1. عرض الجهات الأربعة المطلوبة فقط
   const regions = useMemo(() => {
-    // نقوم بفلترة الجهات الموجودة في البيانات لتطابق القائمة المطلوبة فقط
     return ALLOWED_REGIONS.filter(reg => 
       allAdminData.some(r => r.region.trim() === reg)
     );
   }, [allAdminData]);
 
-  // 2. استخراج الأقاليم المتعلقة بالجهة المختارة فقط
   const provinces = useMemo(() => {
     if (!formData.region) return [];
     return Array.from(new Set(
@@ -93,7 +86,6 @@ const App: React.FC = () => {
     .sort((a, b) => a.localeCompare(b, 'ar'));
   }, [allAdminData, formData.region]);
 
-  // 3. استخراج الجماعات المتعلقة بالإقليم المختار فقط
   const communes = useMemo(() => {
     if (!formData.province) return [];
     return Array.from(new Set(
@@ -105,7 +97,6 @@ const App: React.FC = () => {
     .sort((a, b) => a.localeCompare(b, 'ar'));
   }, [allAdminData, formData.region, formData.province]);
 
-  // 4. استخراج الدواوير المتعلقة بالجماعة المختارة فقط
   const douars = useMemo(() => {
     if (!formData.commune) return [];
     return Array.from(new Set(
@@ -121,13 +112,9 @@ const App: React.FC = () => {
     .sort((a, b) => a.localeCompare(b, 'ar'));
   }, [allAdminData, formData.region, formData.province, formData.commune]);
 
-  /**
-   * تحديث الحقول مع ضمان تصفير التبعيات (Dependency Clearing)
-   */
   const updateField = (field: keyof FormData, value: string) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
-      
       if (field === 'region') {
         updated.province = '';
         updated.commune = '';
@@ -140,7 +127,6 @@ const App: React.FC = () => {
       else if (field === 'commune') {
         updated.nom_douar = '';
       }
-      
       return updated;
     });
   };
@@ -225,10 +211,45 @@ const App: React.FC = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl w-full sm:w-auto justify-center">
-             <button onClick={() => setCurrentView('form')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'form' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-rose-500'}`}>التبليغ عن دوار</button>
-             <button onClick={() => setCurrentView('map')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-blue-600'}`}>خريطة الفيضانات</button>
-             <button onClick={() => setCurrentView('dashboard')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'dashboard' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>سجل البيانات</button>
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl w-full sm:w-auto justify-center shadow-inner">
+             {/* زر التبليغ - وردي شفاف */}
+             <button 
+               onClick={() => setCurrentView('form')} 
+               className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-2 ${
+                 currentView === 'form' 
+                 ? 'bg-rose-500/20 text-rose-700 shadow-sm ring-1 ring-rose-500/10' 
+                 : 'text-slate-500 hover:bg-rose-50 hover:text-rose-600'
+               }`}
+             >
+               <FileEdit size={14} className={currentView === 'form' ? 'text-rose-600' : ''} />
+               <span>التبليغ عن دوار</span>
+             </button>
+
+             {/* زر الخريطة - أخضر شفاف */}
+             <button 
+               onClick={() => setCurrentView('map')} 
+               className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-2 ${
+                 currentView === 'map' 
+                 ? 'bg-emerald-500/20 text-emerald-700 shadow-sm ring-1 ring-emerald-500/10' 
+                 : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'
+               }`}
+             >
+               <MapIcon size={14} className={currentView === 'map' ? 'text-emerald-600' : ''} />
+               <span>خريطة الفيضانات</span>
+             </button>
+
+             {/* زر السجل - أصفر شفاف */}
+             <button 
+               onClick={() => setCurrentView('dashboard')} 
+               className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-2 ${
+                 currentView === 'dashboard' 
+                 ? 'bg-amber-500/20 text-amber-700 shadow-sm ring-1 ring-amber-500/10' 
+                 : 'text-slate-500 hover:bg-amber-50 hover:text-amber-600'
+               }`}
+             >
+               <Database size={14} className={currentView === 'dashboard' ? 'text-amber-600' : ''} />
+               <span>سجل البيانات</span>
+             </button>
           </div>
         </div>
       </nav>
@@ -463,7 +484,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* أيقونة الخريطة العائمة */}
       <div className="fixed bottom-6 left-6 z-[1002]">
         <button 
           onClick={() => setShowDistMap(true)}
