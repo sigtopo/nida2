@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Search, Info, Map as MapIcon, LocateFixed } from 'lucide-react';
+// Added 'Search' to the imports from 'lucide-react'
+import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Info, Map as MapIcon, LocateFixed, Search } from 'lucide-react';
 import { SectionCard, InputField, SearchableSelect } from './components/Layout';
 import { MapDashboard } from './components/MapDashboard';
 import { DistributionMap } from './components/DistributionMap';
 import { WelcomePopup } from './components/WelcomePopup';
-import { FormData, UrgencyLevel, URGENCY_LABELS } from './types';
+import { FormData, UrgencyLevel } from './types';
 import { submitFormData } from './services/api';
 import { fetchAdminData, fetchSubmittedLogs, AdminRow, SubmissionRow } from './services/data';
 
@@ -27,7 +28,7 @@ const App: React.FC = () => {
     region: '', province: '', commune: '', nom_douar: '',
     niveau_urgence: UrgencyLevel.MEDIUM, nature_dommages: '',
     besoins_essentiels: '', numero_telephone: '',
-    latitude: '34.333333', longitude: '-6.111111', lien_maps: ''
+    latitude: '', longitude: '', lien_maps: ''
   });
 
   useEffect(() => {
@@ -57,47 +58,72 @@ const App: React.FC = () => {
     return submittedLogs.filter(log => 
       log.douar.toLowerCase().includes(term) || 
       log.commune.toLowerCase().includes(term) || 
-      log.phone.includes(term) ||
-      log.damage.toLowerCase().includes(term)
+      log.province.toLowerCase().includes(term) ||
+      log.region.toLowerCase().includes(term)
     );
   }, [submittedLogs, searchTerm]);
 
-  // منطق الفلترة الذكية
+  // --- منطق الفلترة المتسلسلة (Cascading Filters) ---
+  
+  // 1. استخراج الجهات الفريدة
   const regions = useMemo(() => 
-    Array.from(new Set(allAdminData.map(r => r.region))).sort((a, b) => a.localeCompare(b, 'ar')), 
+    Array.from(new Set(allAdminData.map(r => r.region)))
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, 'ar')), 
   [allAdminData]);
 
-  const provinces = useMemo(() => 
-    !formData.region ? [] : 
-    Array.from(new Set(allAdminData.filter(r => r.region === formData.region).map(r => r.province)))
-    .sort((a, b) => a.localeCompare(b, 'ar')), 
-  [allAdminData, formData.region]);
+  // 2. استخراج الأقاليم بناءً على الجهة المختارة
+  const provinces = useMemo(() => {
+    if (!formData.region) return [];
+    return Array.from(new Set(
+      allAdminData
+        .filter(r => r.region === formData.region)
+        .map(r => r.province)
+    ))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'ar'));
+  }, [allAdminData, formData.region]);
 
-  const communes = useMemo(() => 
-    !formData.province ? [] : 
-    Array.from(new Set(allAdminData.filter(r => r.region === formData.region && r.province === formData.province).map(r => r.commune)))
-    .sort((a, b) => a.localeCompare(b, 'ar')), 
-  [allAdminData, formData.region, formData.province]);
+  // 3. استخراج الجماعات بناءً على الإقليم المختار
+  const communes = useMemo(() => {
+    if (!formData.province) return [];
+    return Array.from(new Set(
+      allAdminData
+        .filter(r => r.region === formData.region && r.province === formData.province)
+        .map(r => r.commune)
+    ))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'ar'));
+  }, [allAdminData, formData.region, formData.province]);
 
-  const douars = useMemo(() => 
-    !formData.commune ? [] : 
-    Array.from(new Set(allAdminData.filter(r => r.region === formData.region && r.province === formData.province && r.commune === formData.commune).map(r => r.douar)))
-    .sort((a, b) => a.localeCompare(b, 'ar')), 
-  [allAdminData, formData.region, formData.province, formData.commune]);
+  // 4. استخراج الدواوير بناءً على الجماعة المختارة
+  const douars = useMemo(() => {
+    if (!formData.commune) return [];
+    return Array.from(new Set(
+      allAdminData
+        .filter(r => r.region === formData.region && r.province === formData.province && r.commune === formData.commune)
+        .map(r => r.douar)
+    ))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'ar'));
+  }, [allAdminData, formData.region, formData.province, formData.commune]);
 
   const updateField = (field: keyof FormData, value: any) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
-      // تصفية الحقول التابعة عند تغيير الحقل الأب
-      if (field === 'region' && value !== prev.region) { 
-        updated.province = ''; updated.commune = ''; updated.nom_douar = ''; 
+      
+      // إعادة ضبط الحقول التابعة عند تغيير حقل أب
+      if (field === 'region') {
+        updated.province = '';
+        updated.commune = '';
+        updated.nom_douar = '';
+      } else if (field === 'province') {
+        updated.commune = '';
+        updated.nom_douar = '';
+      } else if (field === 'commune') {
+        updated.nom_douar = '';
       }
-      else if (field === 'province' && value !== prev.province) { 
-        updated.commune = ''; updated.nom_douar = ''; 
-      }
-      else if (field === 'commune' && value !== prev.commune) { 
-        updated.nom_douar = ''; 
-      }
+      
       return updated;
     });
   };
@@ -112,22 +138,47 @@ const App: React.FC = () => {
         longitude: longitude.toFixed(6),
         lien_maps: `https://www.google.com/maps?q=${latitude},${longitude}`
       }));
-    }, null, { enableHighAccuracy: true });
+    }, (error) => {
+      console.warn("Geolocation error:", error);
+    }, { enableHighAccuracy: true });
   }, []);
 
   useEffect(() => { fetchLocation(); }, [fetchLocation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    // التحقق من الحقول الإدارية المطلوبة
+    if (!formData.region || !formData.province || !formData.commune || !formData.nom_douar) {
+      setError('يرجى اختيار الموقع الإداري (الجهة، الإقليم، الجماعة، الدوار) بالكامل');
+      return;
+    }
+    
+    // التحقق من الحقول الوصفية
+    if (!formData.nature_dommages || !formData.besoins_essentiels || !formData.numero_telephone) {
+      setError('يرجى ملء كافة تفاصيل الأضرار والاحتياجات ورقم الهاتف');
+      return;
+    }
+
     setLoading(true);
     const result = await submitFormData(formData);
     setLoading(false);
+    
     if (result.success) {
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-      setFormData(prev => ({ ...prev, nature_dommages: '', besoins_essentiels: '', numero_telephone: '' }));
+      setTimeout(() => setSuccess(false), 4000);
+      // تصفير الحقول بعد الإرسال مع الحفاظ على التموقع الإداري لسرعة التبليغ التالي إذا كان في نفس المنطقة
+      setFormData(prev => ({ 
+        ...prev, 
+        nature_dommages: '', 
+        besoins_essentiels: '', 
+        numero_telephone: '' 
+      }));
       loadLogs();
-    } else { setError(result.message); }
+    } else { 
+      setError(result.message); 
+    }
   };
 
   return (
@@ -147,7 +198,7 @@ const App: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="bg-rose-50 text-rose-600 px-2 sm:px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1.5">
                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">صفحة غير رسمية</span>
+                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">منصة تنسيق</span>
               </div>
               
               <button 
@@ -172,8 +223,8 @@ const App: React.FC = () => {
         <>
           <header className="bg-rose-600 text-white pt-16 pb-24 px-6 text-center">
             <div className="max-w-4xl mx-auto">
-              <h1 className="text-4xl font-black mb-3">التبليغ عن دوار متضرر</h1>
-              <p className="text-rose-100 font-medium opacity-90">نظام الربط الجغرافي والإحصائي الموحد لجمع المعطيات</p>
+              <h1 className="text-4xl font-black mb-3 text-white">التبليغ عن دوار متضرر</h1>
+              <p className="text-rose-100 font-medium opacity-90">استمارة الربط الميداني لجمع معطيات الأضرار والاحتياجات</p>
             </div>
           </header>
           <main className="max-w-3xl mx-auto w-full px-6 -mt-16">
@@ -182,7 +233,7 @@ const App: React.FC = () => {
                  <div className="flex items-center justify-between gap-4 text-right">
                     <button 
                       type="button" 
-                      onClick={() => window.open(formData.lien_maps, '_blank')} 
+                      onClick={() => formData.lien_maps && window.open(formData.lien_maps, '_blank')} 
                       className="bg-white p-2.5 rounded-xl border border-blue-100 flex items-center justify-center hover:bg-blue-50 transition-all shadow-sm shrink-0 aspect-square w-12 text-blue-400"
                       title="عرض الموقع على الخريطة"
                     >
@@ -192,28 +243,27 @@ const App: React.FC = () => {
                     <div className="flex items-center gap-3 text-right overflow-hidden flex-1">
                         <div className="flex flex-col text-right">
                           <span className="text-[13px] font-black text-[#107c41] whitespace-nowrap overflow-hidden text-ellipsis">
-                             تحديد الإحداثيات (XY)
+                             تحديد الإحداثيات الجغرافية
                           </span>
                           <div className="flex items-center gap-2 flex-wrap justify-end">
-                            <span className="text-[9px] font-black text-emerald-500 opacity-80 hidden sm:inline">
-                               تم جلب الإحداثيات بنجاح من موقعك
-                            </span>
-                            <span className="text-[10px] font-bold text-emerald-600/80 dir-ltr">
-                               {formData.latitude}, {formData.longitude}
-                            </span>
+                            {formData.latitude ? (
+                              <>
+                                <span className="text-[9px] font-black text-emerald-500 opacity-80 hidden sm:inline">
+                                   تم جلب موقعك الحالي بنجاح
+                                </span>
+                                <span className="text-[10px] font-bold text-emerald-600/80 dir-ltr">
+                                   {formData.latitude}, {formData.longitude}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-[9px] font-black text-amber-500">جاري جلب الموقع...</span>
+                            )}
                           </div>
                         </div>
                         <div className="bg-emerald-500/10 p-2 rounded-xl text-[#107c41] shrink-0">
                           <MapPin size={22} />
                         </div>
                     </div>
-                 </div>
-                 
-                 <div className="flex items-start gap-2 bg-white/50 px-4 py-3 rounded-2xl border border-emerald-100/50">
-                    <AlertCircle size={16} className="text-emerald-600 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-emerald-700 font-black leading-relaxed">
-                      الرجاء إدخال المعطيات بدقة لمساعدة فرق الطوارئ والمجتمع المدني
-                    </p>
                  </div>
               </div>
 
@@ -227,46 +277,51 @@ const App: React.FC = () => {
                       options={regions} 
                       value={formData.region} 
                       onChange={(v) => updateField('region', v)} 
+                      placeholder="اختر الجهة من القائمة..."
                       required 
+                      strict
                     />
                     <SearchableSelect 
                       label="الإقليم / العمالة" 
                       options={provinces} 
                       value={formData.province} 
                       onChange={(v) => updateField('province', v)} 
-                      placeholder={formData.region ? "اختر الإقليم..." : "اختر الجهة أولاً"} 
+                      placeholder={formData.region ? "اختر الإقليم..." : "يرجى اختيار الجهة أولاً"} 
                       disabled={!formData.region}
                       required 
+                      strict
                     />
                     <SearchableSelect 
                       label="الجماعة" 
                       options={communes} 
                       value={formData.commune} 
                       onChange={(v) => updateField('commune', v)} 
-                      placeholder={formData.province ? "اختر الجماعة..." : "اختر الإقليم أولاً"} 
+                      placeholder={formData.province ? "اختر الجماعة..." : "يرجى اختيار الإقليم أولاً"} 
                       disabled={!formData.province}
                       required 
+                      strict
                     />
                     <SearchableSelect 
                       label="اسم الدوار" 
                       options={douars} 
                       value={formData.nom_douar} 
                       onChange={(v) => updateField('nom_douar', v)} 
-                      placeholder={formData.commune ? "اختر الدوار..." : "اختر الجماعة أولاً"} 
+                      placeholder={formData.commune ? "اختر الدوار أو اكتب اسماً جديداً..." : "يرجى اختيار الجماعة أولاً"} 
                       disabled={!formData.commune}
                       required 
+                      strict={false} 
                     />
                   </>
                 )}
               </SectionCard>
 
-              <SectionCard title="تفاصيل الحالة" number="2.">
+              <SectionCard title="تفاصيل الحالة الميدانية" number="2.">
                 <div className="md:col-span-2 space-y-3">
                   <label className="text-[13px] font-bold text-slate-500">مستوى الاستعجال</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {(Object.keys(UrgencyLevel) as Array<keyof typeof UrgencyLevel>).map((level) => {
                       const isActive = formData.niveau_urgence === UrgencyLevel[level];
-                      const labels = { LOW: '1- مستقر', MEDIUM: '2- متوسط', HIGH: '3- حاد', CRITICAL: '4- كارثي' };
+                      const labels = { LOW: '1- منخفض', MEDIUM: '2- متوسط', HIGH: '3- مرتفع', CRITICAL: '4- حرج جداً' };
                       return (
                         <button key={level} type="button" onClick={() => updateField('niveau_urgence', UrgencyLevel[level])}
                           className={`py-4 rounded-xl text-[11px] font-bold border transition-all ${isActive ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"}`}
@@ -277,16 +332,17 @@ const App: React.FC = () => {
                     })}
                   </div>
                 </div>
-                <InputField label="طبيعة الأضرار" placeholder="مثال: انهيار مباني، انقطاع مياه..." value={formData.nature_dommages} onChange={(v) => updateField('nature_dommages', v)} required />
-                <InputField label="رقم الهاتف" placeholder="06XXXXXXXX" value={formData.numero_telephone} onChange={(v) => updateField('numero_telephone', v)} type="tel" required />
-                <InputField label="الاحتياجات" placeholder="حدد بوضوح ما يحتاجه السكان..." value={formData.besoins_essentiels} onChange={(v) => updateField('besoins_essentiels', v)} multiline fullWidth required />
+                <InputField label="طبيعة الأضرار" placeholder="مثال: انهيار جزئي، انقطاع الطريق، فيضان..." value={formData.nature_dommages} onChange={(v) => updateField('nature_dommages', v)} required />
+                <InputField label="رقم الهاتف للتواصل" placeholder="06XXXXXXXX" value={formData.numero_telephone} onChange={(v) => updateField('numero_telephone', v)} type="tel" required />
+                <InputField label="الاحتياجات المستعجلة" placeholder="حدد نوع المساعدة المطلوبة (أغطية، مواد غذائية، أدوية...)" value={formData.besoins_essentiels} onChange={(v) => updateField('besoins_essentiels', v)} multiline fullWidth required />
               </SectionCard>
 
               <button type="submit" disabled={loading} className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 text-lg font-black transition-all shadow-xl active:scale-95 ${loading ? "bg-slate-300 text-slate-500" : "bg-[#0f172a] text-white hover:bg-slate-800"}`}>
                 {loading ? <RefreshCw className="animate-spin" /> : <Send size={22} className="-rotate-45" />}
-                <span>التبليغ بدوار مهدد</span>
+                <span>إرسال البلاغ الآن</span>
               </button>
-              {success && <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl border border-emerald-100 text-center font-bold flex items-center justify-center gap-2 animate-fade-in"><CheckCircle2 size={20} /> تم إرسال البلاغ بنجاح</div>}
+              
+              {success && <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl border border-emerald-100 text-center font-bold flex items-center justify-center gap-2 animate-fade-in"><CheckCircle2 size={20} /> تم إرسال البيانات بنجاح إلى النظام</div>}
               {error && <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl border border-rose-100 text-center font-bold flex items-center justify-center gap-2 animate-fade-in"><AlertCircle size={20} /> {error}</div>}
             </form>
           </main>
@@ -297,11 +353,11 @@ const App: React.FC = () => {
              <div className="flex justify-between items-end">
                 <button onClick={loadLogs} disabled={logsLoading} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
                   {logsLoading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                  تحديث
+                  تحديث الخريطة
                 </button>
                 <div className="text-right">
                   <h1 className="text-2xl font-black text-slate-800">تحليل المناطق المغمورة</h1>
-                  <p className="text-sm text-slate-500 font-medium"> Sources des données : Sentinel-1 SAR (VV & VH, Copernicus, GEE), HCP, OSM / geojilit , Geotoposig </p>
+                  <p className="text-sm text-slate-500 font-medium">رصد المناطق المتضررة والتدخلات الميدانية</p>
                 </div>
              </div>
           </header>
@@ -317,20 +373,13 @@ const App: React.FC = () => {
                 <div className="relative flex-1 min-w-[200px] md:w-64">
                   <input 
                     type="text"
-                    placeholder="ابحث..."
+                    placeholder="بحث في السجل..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-3 pr-10 pl-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-amber-400 outline-none transition-all shadow-sm"
+                    className="w-full bg-white border border-slate-200 rounded-xl py-3 pr-10 pl-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-rose-400 outline-none transition-all shadow-sm"
                   />
                   <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 </div>
-                <button 
-                  onClick={loadLogs}
-                  className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-6 py-3 rounded-xl font-black text-xs flex items-center gap-2 transition-all shadow-md active:scale-95"
-                >
-                  <Search size={16} /> بحث
-                </button>
-                {/* زر تحديث المعطيات الجديد في سجل الإغاثة */}
                 <button 
                   onClick={loadLogs} 
                   disabled={logsLoading} 
@@ -342,7 +391,7 @@ const App: React.FC = () => {
               </div>
               <div className="order-1 md:order-2 text-right">
                 <h1 className="text-3xl font-black text-slate-800 mb-2">سجل الإغاثة الميداني</h1>
-                <p className="text-slate-500 font-medium">إجمالي البلاغات: {filteredLogs.length}</p>
+                <p className="text-slate-500 font-medium">إجمالي البلاغات المسجلة: {filteredLogs.length}</p>
               </div>
             </div>
           </header>
@@ -351,35 +400,35 @@ const App: React.FC = () => {
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-right border-collapse">
                 <thead>
-                  <tr className="bg-yellow-400/20 text-slate-900 border-b border-yellow-400/30">
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap border-l border-slate-100/30">الجهة / الإقليم</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap border-l border-slate-100/30">الجماعة / الدوار</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap border-l border-slate-100/30">الخطورة</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap border-l border-slate-100/30">الأضرار</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap border-l border-slate-100/30">الاحتياجات</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap border-l border-slate-100/30">التواصل</th>
+                  <tr className="bg-slate-50 text-slate-900 border-b border-slate-100">
+                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الجهة / الإقليم</th>
+                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الجماعة / الدوار</th>
+                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الخطورة</th>
+                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الأضرار</th>
+                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الاحتياجات</th>
+                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">التواصل</th>
                     <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الموقع</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/50">
                   {filteredLogs.map((log, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-5 border-l border-slate-100/30">
+                      <td className="px-6 py-5">
                         <div className="text-sm font-bold text-slate-800">{log.region}</div>
                         <div className="text-xs text-slate-500 mt-0.5">{log.province}</div>
                       </td>
-                      <td className="px-6 py-5 border-l border-slate-100/30">
+                      <td className="px-6 py-5">
                         <div className="text-sm font-bold text-slate-800">{log.commune}</div>
                         <div className="text-xs text-rose-500 font-bold mt-0.5">{log.douar}</div>
                       </td>
-                      <td className="px-6 py-5 border-l border-slate-100/30 text-center">
+                      <td className="px-6 py-5 text-center">
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black inline-block ${log.urgency.includes('حرج') || log.urgency.includes('4') ? 'bg-rose-500 text-white' : log.urgency.includes('مرتفع') || log.urgency.includes('3') ? 'bg-orange-500 text-white' : log.urgency.includes('متوسط') || log.urgency.includes('2') ? 'bg-amber-400 text-slate-900' : 'bg-emerald-500 text-white'}`}>
                           {log.urgency}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-xs text-slate-600 font-medium max-w-[200px] border-l border-slate-100/30">{log.damage}</td>
-                      <td className="px-6 py-5 text-xs text-slate-600 font-medium max-w-[200px] border-l border-slate-100/30">{log.needs}</td>
-                      <td className="px-6 py-5 border-l border-slate-100/30">
+                      <td className="px-6 py-5 text-xs text-slate-600 font-medium max-w-[200px]">{log.damage}</td>
+                      <td className="px-6 py-5 text-xs text-slate-600 font-medium max-w-[200px]">{log.needs}</td>
+                      <td className="px-6 py-5">
                         <a href={`tel:${log.phone}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-xl">
                           <Phone size={14} /> {log.phone}
                         </a>
@@ -391,7 +440,7 @@ const App: React.FC = () => {
                   ))}
                   {filteredLogs.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-bold">لا توجد بيانات متاحة حالياً</td>
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-bold">لا توجد بيانات مطابقة للبحث حالياً</td>
                     </tr>
                   )}
                 </tbody>
@@ -401,14 +450,14 @@ const App: React.FC = () => {
         </main>
       )}
 
-      {/* أيقونة عائمة لفتح خريطة التوزيع التفاعلية - زرقاء شفافة 50% */}
+      {/* أيقونة الخريطة العائمة */}
       <div className="fixed bottom-6 left-6 z-[1002]">
         <button 
           onClick={() => setShowDistMap(true)}
-          className="bg-blue-500/50 backdrop-blur-md text-white p-3 rounded-full shadow-lg border border-white/20 hover:bg-blue-600/60 active:scale-90 transition-all flex items-center justify-center"
-          title="خريطة التوزيع"
+          className="bg-rose-500 text-white p-4 rounded-full shadow-2xl hover:bg-rose-600 active:scale-90 transition-all flex items-center justify-center"
+          title="عرض خريطة التوزيع"
         >
-          <MapIcon size={18} />
+          <MapIcon size={24} />
         </button>
       </div>
 

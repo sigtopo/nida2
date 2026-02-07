@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Search, Plus, MapPin } from 'lucide-react';
+import { ChevronDown, Search, Plus, AlertCircle } from 'lucide-react';
 
 export const SectionCard: React.FC<{ title: string; children: React.ReactNode; number?: string }> = ({ title, children, number }) => (
   <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-8 mb-6">
@@ -60,8 +60,10 @@ export const SearchableSelect: React.FC<{
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
-}> = ({ label, options, value, onChange, placeholder, disabled, required }) => {
+  strict?: boolean;
+}> = ({ label, options, value, onChange, placeholder, disabled, required, strict = true }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -74,13 +76,15 @@ export const SearchableSelect: React.FC<{
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const safeValue = value || '';
-  const safeOptions = options || [];
+  // تحديث نص البحث عندما تتغير القيمة المختارة
+  useEffect(() => {
+    setSearchTerm(value || '');
+  }, [value]);
 
-  const filteredOptions = safeOptions.filter(opt => {
-    if (!opt) return false;
-    return opt.toLowerCase().includes(safeValue.toLowerCase());
-  });
+  const safeOptions = options || [];
+  const filteredOptions = safeOptions.filter(opt => 
+    opt && opt.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col gap-1.5 relative" ref={containerRef}>
@@ -90,23 +94,24 @@ export const SearchableSelect: React.FC<{
       <div className="relative">
         <input
           type="text"
-          value={safeValue}
+          value={searchTerm}
           onChange={(e) => {
-            onChange(e.target.value);
+            setSearchTerm(e.target.value);
             setIsOpen(true);
+            if (!strict) onChange(e.target.value);
           }}
           onFocus={() => setIsOpen(true)}
-          placeholder={placeholder || 'ابحث أو اكتب...'}
+          placeholder={placeholder || 'ابحث أو اختر...'}
           disabled={disabled}
-          className="w-full p-4 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/5 outline-none transition-all bg-white text-slate-700 placeholder:text-slate-300 text-sm disabled:bg-slate-50 text-right"
+          className="w-full p-4 rounded-xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-500/5 outline-none transition-all bg-white text-slate-700 placeholder:text-slate-300 text-sm disabled:bg-slate-50 text-right pr-4 pl-10"
         />
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none">
            <ChevronDown size={18} />
         </div>
       </div>
 
       {isOpen && !disabled && (
-        <div className="absolute top-full left-0 w-full bg-white border border-slate-100 rounded-xl mt-1 shadow-xl z-[100] max-h-48 overflow-y-auto custom-scrollbar text-right">
+        <div className="absolute top-full left-0 w-full bg-white border border-slate-100 rounded-xl mt-1 shadow-xl z-[100] max-h-56 overflow-y-auto custom-scrollbar text-right ring-1 ring-slate-900/5">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((opt) => (
               <button
@@ -114,19 +119,31 @@ export const SearchableSelect: React.FC<{
                 type="button"
                 onClick={() => {
                   onChange(opt);
+                  setSearchTerm(opt);
                   setIsOpen(false);
                 }}
-                className={`w-full text-right px-4 py-2.5 hover:bg-rose-50 text-sm transition-colors ${
-                  safeValue === opt ? 'bg-rose-50 text-rose-600 font-bold' : 'text-slate-600'
+                className={`w-full text-right px-4 py-3 hover:bg-rose-50 text-sm transition-colors border-b border-slate-50 last:border-none ${
+                  value === opt ? 'bg-rose-50 text-rose-600 font-bold' : 'text-slate-600'
                 }`}
               >
                 {opt}
               </button>
             ))
           ) : (
-            <div className="px-4 py-3 text-slate-400 italic text-xs flex items-center justify-end gap-2">
-              <span>إضافة جديد: "{safeValue}"</span>
-              <Plus size={14} />
+            <div className="px-4 py-4 text-slate-400 italic text-xs flex items-center justify-center gap-2">
+              {searchTerm && !strict ? (
+                <>
+                  <span>إضافة جديد: "{searchTerm}"</span>
+                  <Plus size={14} className="text-rose-500" />
+                </>
+              ) : searchTerm ? (
+                <>
+                  <AlertCircle size={14} className="text-slate-300" />
+                  <span>لا توجد نتائج مطابقة</span>
+                </>
+              ) : (
+                <span>يرجى كتابة اسم للبحث...</span>
+              )}
             </div>
           )}
         </div>

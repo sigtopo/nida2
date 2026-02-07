@@ -19,7 +19,9 @@ export interface SubmissionRow {
   mapLink: string;
 }
 
+// الرابط الجديد لبيانات الإدارة (الجهة، الإقليم، الجماعة، الدوار)
 const ADMIN_DATA_URL = 'https://docs.google.com/spreadsheets/d/1EWdDVYYX7P5TcZElS54N6V49sCTJ5gnVkrgvhN1B9M4/export?format=csv';
+// رابط سجل البيانات (المعطيات المرسلة)
 const LOG_DATA_URL = 'https://docs.google.com/spreadsheets/d/1Hsk6Ja7yB8ELZG8jj_C5zQQrc7p6s2n2aX-pml89f3k/export?format=csv';
 
 function parseCSVLine(line: string): string[] {
@@ -29,7 +31,10 @@ function parseCSVLine(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     if (char === '"') inQuotes = !inQuotes;
-    else if (char === ',' && !inQuotes) { result.push(cell.trim()); cell = ''; }
+    else if (char === ',' && !inQuotes) { 
+      result.push(cell.trim()); 
+      cell = ''; 
+    }
     else cell += char;
   }
   result.push(cell.trim());
@@ -39,21 +44,33 @@ function parseCSVLine(line: string): string[] {
 export const fetchAdminData = async (): Promise<AdminRow[]> => {
   try {
     const response = await fetch(ADMIN_DATA_URL);
+    if (!response.ok) throw new Error('Failed to fetch admin data');
     const text = await response.text();
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    
+    // الترتيب حسب الأعمدة في الملف: 
+    // 0: Région, 1: Préfecture / Province, 2: Commune, 3: Douar
     return lines.slice(1).map(line => {
       const cols = parseCSVLine(line);
-      return { region: cols[0], province: cols[1], commune: cols[2], douar: cols[3] };
+      return { 
+        region: (cols[0] || '').trim(), 
+        province: (cols[1] || '').trim(), 
+        commune: (cols[2] || '').trim(), 
+        douar: (cols[3] || '').trim() 
+      };
     });
-  } catch (e) { return []; }
+  } catch (e) { 
+    console.error("Error fetching admin data:", e);
+    return []; 
+  }
 };
 
 export const fetchSubmittedLogs = async (): Promise<SubmissionRow[]> => {
   try {
     const response = await fetch(LOG_DATA_URL);
+    if (!response.ok) throw new Error('Failed to fetch submitted logs');
     const text = await response.text();
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-    // تجاوز السطر الأول (العناوين)
     return lines.slice(1).map(line => {
       const cols = parseCSVLine(line);
       return {
@@ -69,5 +86,8 @@ export const fetchSubmittedLogs = async (): Promise<SubmissionRow[]> => {
         mapLink: cols[9] || ''
       };
     });
-  } catch (e) { return []; }
+  } catch (e) { 
+    console.error("Error fetching logs:", e);
+    return []; 
+  }
 };
