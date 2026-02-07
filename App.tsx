@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Database, FileText } from 'lucide-react';
+import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Database, FileText, Map as MapIcon } from 'lucide-react';
 import { SectionCard, InputField, SearchableSelect } from './components/Layout';
+import { MapDashboard } from './components/MapDashboard';
 import { FormData, UrgencyLevel, URGENCY_LABELS } from './types';
 import { submitFormData } from './services/api';
 import { fetchAdminData, fetchSubmittedLogs, AdminRow, SubmissionRow } from './services/data';
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'form' | 'dashboard'>('form');
+  const [currentView, setCurrentView] = useState<'form' | 'dashboard' | 'map'>('form');
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -35,7 +36,7 @@ const App: React.FC = () => {
     loadInitialData();
   }, []);
 
-  // Fetch Logs when Dashboard is active
+  // Fetch Logs when Dashboard or Map is active
   const loadLogs = useCallback(async () => {
     setLogsLoading(true);
     const logs = await fetchSubmittedLogs();
@@ -44,7 +45,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (currentView === 'dashboard') loadLogs();
+    if (currentView === 'dashboard' || currentView === 'map') loadLogs();
   }, [currentView, loadLogs]);
 
   // Form Cascading Filter Logic
@@ -92,7 +93,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col antialiased pb-12">
       {/* Top Navbar */}
-      <nav className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-50">
+      <nav className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-[1001]">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('form')}>
             <div className="bg-rose-500 p-1.5 rounded-lg text-white">
@@ -103,18 +104,26 @@ const App: React.FC = () => {
           <div className="flex items-center gap-2">
              <button 
                 onClick={() => setCurrentView('form')}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${currentView === 'form' ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' : 'text-slate-400 hover:text-rose-500'}`}
+                className={`px-3 sm:px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all ${currentView === 'form' ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' : 'text-slate-400 hover:text-rose-500'}`}
              >
                 <div className="flex items-center gap-2">
-                   <FileText size={14} /> إرسال بلاغ
+                   <FileText size={14} /> <span className="hidden xs:inline">إرسال بلاغ</span>
+                </div>
+             </button>
+             <button 
+                onClick={() => setCurrentView('map')}
+                className={`px-3 sm:px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all ${currentView === 'map' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-slate-400 hover:text-blue-600'}`}
+             >
+                <div className="flex items-center gap-2">
+                   <MapIcon size={14} /> <span className="hidden xs:inline">الخريطة الميدانية</span>
                 </div>
              </button>
              <button 
                 onClick={() => setCurrentView('dashboard')}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${currentView === 'dashboard' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'text-slate-400 hover:text-slate-900'}`}
+                className={`px-3 sm:px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all ${currentView === 'dashboard' ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' : 'text-slate-400 hover:text-slate-900'}`}
              >
                 <div className="flex items-center gap-2">
-                   <Database size={14} /> لوحة المعطيات
+                   <Database size={14} /> <span className="hidden xs:inline">لوحة المعطيات</span>
                 </div>
              </button>
           </div>
@@ -187,11 +196,41 @@ const App: React.FC = () => {
               </button>
 
               {success && (
-                <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl border border-emerald-100 text-center font-bold flex items-center justify-center gap-2"><CheckCircle2 size={20} /> تم إرسال البلاغ بنجاح</div>
+                <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl border border-emerald-100 text-center font-bold flex items-center justify-center gap-2 animate-fade-in"><CheckCircle2 size={20} /> تم إرسال البلاغ بنجاح</div>
               )}
             </form>
           </main>
         </>
+      ) : currentView === 'map' ? (
+        /* Map View */
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col">
+          <header className="mb-6 text-right">
+             <div className="flex justify-between items-end">
+                <button 
+                  onClick={loadLogs}
+                  disabled={logsLoading}
+                  className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                >
+                  {logsLoading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                  تحديث الخريطة
+                </button>
+                <div className="text-right">
+                  <h1 className="text-2xl font-black text-slate-800">التوزيع الجغرافي والمناطق المهددة</h1>
+                  <p className="text-sm text-slate-500 font-medium">عرض البلاغات فوق طبقة مناطق الفيضانات والسيول</p>
+                </div>
+             </div>
+          </header>
+          <div className="flex-1 min-h-[600px] bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-100">
+            {logsLoading && submittedLogs.length === 0 ? (
+               <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400">
+                  <Loader2 size={48} className="animate-spin text-blue-500" />
+                  <span className="font-bold">جاري تحميل المعطيات الجغرافية...</span>
+               </div>
+            ) : (
+               <MapDashboard logs={submittedLogs} userLat={parseFloat(formData.latitude)} userLng={parseFloat(formData.longitude)} />
+            )}
+          </div>
+        </main>
       ) : (
         /* Dashboard View */
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-10">
@@ -229,7 +268,7 @@ const App: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {logsLoading ? (
+                  {logsLoading && submittedLogs.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-20 text-center text-slate-400">
                         <div className="flex flex-col items-center gap-3">
