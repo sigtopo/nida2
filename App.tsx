@@ -83,7 +83,8 @@ const App: React.FC = () => {
         .map(r => r.province.trim())
     ))
     .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, 'ar'));
+    // Fix: Explicitly cast to string to resolve localeCompare property issue
+    .sort((a, b) => (a as string).localeCompare(b as string, 'ar'));
   }, [allAdminData, formData.region]);
 
   const communes = useMemo(() => {
@@ -94,7 +95,8 @@ const App: React.FC = () => {
         .map(r => r.commune.trim())
     ))
     .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, 'ar'));
+    // Fix: Explicitly cast to string to resolve localeCompare property issue
+    .sort((a, b) => (a as string).localeCompare(b as string, 'ar'));
   }, [allAdminData, formData.region, formData.province]);
 
   const douars = useMemo(() => {
@@ -109,7 +111,8 @@ const App: React.FC = () => {
         .map(r => r.douar.trim())
     ))
     .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, 'ar'));
+    // Fix: Explicitly cast to string to resolve localeCompare property issue
+    .sort((a, b) => (a as string).localeCompare(b as string, 'ar'));
   }, [allAdminData, formData.region, formData.province, formData.commune]);
 
   const updateField = (field: keyof FormData, value: string) => {
