@@ -24,7 +24,7 @@ export const WelcomePopup: React.FC<WelcomePopupProps> = ({ onClose }) => {
             <div className="absolute bottom-0 right-0 w-32 h-32 bg-white rounded-full translate-x-1/4 translate-y-1/4"></div>
           </div>
           
-          {/* Close button - refined for mobile and desktop */}
+          {/* Close button */}
           <button 
             onClick={onClose}
             className="bg-white p-2.5 rounded-2xl shadow-xl z-10 group hover:scale-105 transition-all active:scale-95 flex items-center gap-2 px-6"
@@ -88,19 +88,21 @@ export const WelcomePopup: React.FC<WelcomePopupProps> = ({ onClose }) => {
                   className="flex items-center gap-2 group transition-all"
                   title="تواصل عبر واتساب"
                 >
-                  <div className="p-1 rounded-full bg-slate-50 border border-slate-100 group-hover:bg-green-50 group-hover:border-green-100 transition-colors">
+                  <div className="p-1.5 rounded-full bg-emerald-50 border border-emerald-100 group-hover:bg-emerald-100 transition-colors">
                     <img 
                       src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
                       alt="WhatsApp" 
-                      className="w-6 h-6" 
+                      className="w-5 h-5" 
                     />
                   </div>
-                  <span className="text-slate-800 font-black text-sm group-hover:text-green-600 transition-colors">Geojilit</span>
+                  <span className="text-emerald-700 font-black text-xs group-hover:scale-105 transition-transform">واتساب</span>
                 </a>
+
+                <div className="w-1 h-1 rounded-full bg-slate-200"></div>
 
                 <a 
                   href="mailto:jilitsig@gmail.com"
-                  className="text-slate-500 font-bold text-[11px] hover:text-rose-500 transition-colors flex items-center gap-1.5 bg-slate-50 px-3 py-1 rounded-full border border-slate-100"
+                  className="text-slate-500 font-bold text-[11px] hover:text-rose-500 transition-colors flex items-center gap-1.5"
                 >
                   <Mail size={12} />
                   jilitsig@gmail.com
@@ -109,7 +111,7 @@ export const WelcomePopup: React.FC<WelcomePopupProps> = ({ onClose }) => {
             </div>
 
             {/* Copyright Section */}
-            <div className="mt-4 pt-4 border-t border-slate-50 w-full text-center">
+            <div className="mt-2 pt-4 border-t border-slate-50 w-full text-center">
               <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] select-none">
                 copyright 2026 geojilit v1.02
               </p>

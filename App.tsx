@@ -62,6 +62,7 @@ const App: React.FC = () => {
     );
   }, [submittedLogs, searchTerm]);
 
+  // منطق الفلترة الذكية
   const regions = useMemo(() => 
     Array.from(new Set(allAdminData.map(r => r.region))).sort((a, b) => a.localeCompare(b, 'ar')), 
   [allAdminData]);
@@ -87,9 +88,16 @@ const App: React.FC = () => {
   const updateField = (field: keyof FormData, value: any) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
-      if (field === 'region' && value !== prev.region) { updated.province = ''; updated.commune = ''; updated.nom_douar = ''; }
-      else if (field === 'province' && value !== prev.province) { updated.commune = ''; updated.nom_douar = ''; }
-      else if (field === 'commune' && value !== prev.commune) { updated.nom_douar = ''; }
+      // تصفية الحقول التابعة عند تغيير الحقل الأب
+      if (field === 'region' && value !== prev.region) { 
+        updated.province = ''; updated.commune = ''; updated.nom_douar = ''; 
+      }
+      else if (field === 'province' && value !== prev.province) { 
+        updated.commune = ''; updated.nom_douar = ''; 
+      }
+      else if (field === 'commune' && value !== prev.commune) { 
+        updated.nom_douar = ''; 
+      }
       return updated;
     });
   };
@@ -124,7 +132,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col antialiased pb-20 relative">
-      {/* النافذة الترحيبية */}
       {showWelcome && <WelcomePopup onClose={() => setShowWelcome(false)} />}
 
       <nav className="bg-white border-b border-slate-100 px-4 sm:px-6 py-4 sticky top-0 z-[1001] shadow-sm">
@@ -145,10 +152,10 @@ const App: React.FC = () => {
               
               <button 
                 onClick={() => setShowWelcome(true)}
-                className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"
+                className="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"
                 title="معلومات المنصة"
               >
-                <Info size={18} />
+                <Info size={14} />
               </button>
             </div>
           </div>
@@ -209,18 +216,50 @@ const App: React.FC = () => {
                     </p>
                  </div>
               </div>
+
               <SectionCard title="التموقع الإداري" number="1.">
                 {dataLoading ? (
                   <div className="md:col-span-2 flex justify-center py-6"><Loader2 className="animate-spin text-rose-500" /></div>
                 ) : (
                   <>
-                    <SearchableSelect label="الجهة" options={regions} value={formData.region} onChange={(v) => updateField('region', v)} required />
-                    <SearchableSelect label="الإقليم / العمالة" options={provinces} value={formData.province} onChange={(v) => updateField('province', v)} placeholder="اختر الجهة أولاً" required />
-                    <SearchableSelect label="الجماعة" options={communes} value={formData.commune} onChange={(v) => updateField('commune', v)} placeholder="اختر الإقليم أولاً" required />
-                    <SearchableSelect label="اسم الدوار" options={douars} value={formData.nom_douar} onChange={(v) => updateField('nom_douar', v)} placeholder="اختر الجماعة أولاً" required />
+                    <SearchableSelect 
+                      label="الجهة" 
+                      options={regions} 
+                      value={formData.region} 
+                      onChange={(v) => updateField('region', v)} 
+                      required 
+                    />
+                    <SearchableSelect 
+                      label="الإقليم / العمالة" 
+                      options={provinces} 
+                      value={formData.province} 
+                      onChange={(v) => updateField('province', v)} 
+                      placeholder={formData.region ? "اختر الإقليم..." : "اختر الجهة أولاً"} 
+                      disabled={!formData.region}
+                      required 
+                    />
+                    <SearchableSelect 
+                      label="الجماعة" 
+                      options={communes} 
+                      value={formData.commune} 
+                      onChange={(v) => updateField('commune', v)} 
+                      placeholder={formData.province ? "اختر الجماعة..." : "اختر الإقليم أولاً"} 
+                      disabled={!formData.province}
+                      required 
+                    />
+                    <SearchableSelect 
+                      label="اسم الدوار" 
+                      options={douars} 
+                      value={formData.nom_douar} 
+                      onChange={(v) => updateField('nom_douar', v)} 
+                      placeholder={formData.commune ? "اختر الدوار..." : "اختر الجماعة أولاً"} 
+                      disabled={!formData.commune}
+                      required 
+                    />
                   </>
                 )}
               </SectionCard>
+
               <SectionCard title="تفاصيل الحالة" number="2.">
                 <div className="md:col-span-2 space-y-3">
                   <label className="text-[13px] font-bold text-slate-500">مستوى الاستعجال</label>
@@ -242,6 +281,7 @@ const App: React.FC = () => {
                 <InputField label="رقم الهاتف" placeholder="06XXXXXXXX" value={formData.numero_telephone} onChange={(v) => updateField('numero_telephone', v)} type="tel" required />
                 <InputField label="الاحتياجات" placeholder="حدد بوضوح ما يحتاجه السكان..." value={formData.besoins_essentiels} onChange={(v) => updateField('besoins_essentiels', v)} multiline fullWidth required />
               </SectionCard>
+
               <button type="submit" disabled={loading} className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 text-lg font-black transition-all shadow-xl active:scale-95 ${loading ? "bg-slate-300 text-slate-500" : "bg-[#0f172a] text-white hover:bg-slate-800"}`}>
                 {loading ? <RefreshCw className="animate-spin" /> : <Send size={22} className="-rotate-45" />}
                 <span>التبليغ بدوار مهدد</span>
@@ -273,8 +313,8 @@ const App: React.FC = () => {
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-10">
           <header className="mb-10 text-right">
             <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-              <div className="order-2 md:order-1 flex items-center gap-2 w-full md:w-auto">
-                <div className="relative flex-1 md:w-64">
+              <div className="order-2 md:order-1 flex items-center gap-2 w-full md:w-auto flex-wrap">
+                <div className="relative flex-1 min-w-[200px] md:w-64">
                   <input 
                     type="text"
                     placeholder="ابحث..."
@@ -289,6 +329,15 @@ const App: React.FC = () => {
                   className="bg-amber-400 hover:bg-amber-500 text-slate-900 px-6 py-3 rounded-xl font-black text-xs flex items-center gap-2 transition-all shadow-md active:scale-95"
                 >
                   <Search size={16} /> بحث
+                </button>
+                {/* زر تحديث المعطيات الجديد في سجل الإغاثة */}
+                <button 
+                  onClick={loadLogs} 
+                  disabled={logsLoading} 
+                  className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-black text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {logsLoading ? <Loader2 size={16} className="animate-spin text-rose-500" /> : <RefreshCw size={16} className="text-rose-500" />}
+                  تحديث المعطيات
                 </button>
               </div>
               <div className="order-1 md:order-2 text-right">
@@ -340,6 +389,11 @@ const App: React.FC = () => {
                       </td>
                     </tr>
                   ))}
+                  {filteredLogs.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-bold">لا توجد بيانات متاحة حالياً</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -347,7 +401,7 @@ const App: React.FC = () => {
         </main>
       )}
 
-      {/* أيقونة عائمة لفتح خريطة التوزيع التفاعلية - تم تصغيرها وجعلها شفافة */}
+      {/* أيقونة عائمة لفتح خريطة التوزيع التفاعلية - زرقاء شفافة 50% */}
       <div className="fixed bottom-6 left-6 z-[1002]">
         <button 
           onClick={() => setShowDistMap(true)}
