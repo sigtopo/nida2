@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-// Added 'Search' to the imports from 'lucide-react'
 import { MapPin, Send, RefreshCw, CheckCircle2, ShieldAlert, Loader2, ExternalLink, Phone, AlertCircle, Info, Map as MapIcon, LocateFixed, Search } from 'lucide-react';
 import { SectionCard, InputField, SearchableSelect } from './components/Layout';
 import { MapDashboard } from './components/MapDashboard';
@@ -31,6 +30,15 @@ const App: React.FC = () => {
     latitude: '', longitude: '', lien_maps: ''
   });
 
+  // قائمة الجهات المعتمدة حصرياً
+  const ALLOWED_REGIONS = [
+    'الرباط - سلا - القنيطرة',
+    'طنجة - تطوان - الحسيمة',
+    'فاس - مكناس',
+    'الشرق'
+  ];
+
+  // جلب البيانات الأولية عند التشغيل
   useEffect(() => {
     const loadInitialData = async () => {
       setDataLoading(true);
@@ -63,64 +71,73 @@ const App: React.FC = () => {
     );
   }, [submittedLogs, searchTerm]);
 
-  // --- منطق الفلترة المتسلسلة (Cascading Filters) ---
+  // --- منطق الفلترة الهرمية الصارم (Cascading Logic) ---
   
-  // 1. استخراج الجهات الفريدة
-  const regions = useMemo(() => 
-    Array.from(new Set(allAdminData.map(r => r.region)))
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b, 'ar')), 
-  [allAdminData]);
+  // 1. عرض الجهات الأربعة المطلوبة فقط
+  const regions = useMemo(() => {
+    // نقوم بفلترة الجهات الموجودة في البيانات لتطابق القائمة المطلوبة فقط
+    return ALLOWED_REGIONS.filter(reg => 
+      allAdminData.some(r => r.region.trim() === reg)
+    );
+  }, [allAdminData]);
 
-  // 2. استخراج الأقاليم بناءً على الجهة المختارة
+  // 2. استخراج الأقاليم المتعلقة بالجهة المختارة فقط
   const provinces = useMemo(() => {
     if (!formData.region) return [];
     return Array.from(new Set(
       allAdminData
-        .filter(r => r.region === formData.region)
-        .map(r => r.province)
+        .filter(r => r.region.trim() === formData.region.trim())
+        .map(r => r.province.trim())
     ))
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, 'ar'));
   }, [allAdminData, formData.region]);
 
-  // 3. استخراج الجماعات بناءً على الإقليم المختار
+  // 3. استخراج الجماعات المتعلقة بالإقليم المختار فقط
   const communes = useMemo(() => {
     if (!formData.province) return [];
     return Array.from(new Set(
       allAdminData
-        .filter(r => r.region === formData.region && r.province === formData.province)
-        .map(r => r.commune)
+        .filter(r => r.region.trim() === formData.region.trim() && r.province.trim() === formData.province.trim())
+        .map(r => r.commune.trim())
     ))
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, 'ar'));
   }, [allAdminData, formData.region, formData.province]);
 
-  // 4. استخراج الدواوير بناءً على الجماعة المختارة
+  // 4. استخراج الدواوير المتعلقة بالجماعة المختارة فقط
   const douars = useMemo(() => {
     if (!formData.commune) return [];
     return Array.from(new Set(
       allAdminData
-        .filter(r => r.region === formData.region && r.province === formData.province && r.commune === formData.commune)
-        .map(r => r.douar)
+        .filter(r => 
+          r.region.trim() === formData.region.trim() && 
+          r.province.trim() === formData.province.trim() && 
+          r.commune.trim() === formData.commune.trim()
+        )
+        .map(r => r.douar.trim())
     ))
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, 'ar'));
   }, [allAdminData, formData.region, formData.province, formData.commune]);
 
-  const updateField = (field: keyof FormData, value: any) => {
+  /**
+   * تحديث الحقول مع ضمان تصفير التبعيات (Dependency Clearing)
+   */
+  const updateField = (field: keyof FormData, value: string) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
       
-      // إعادة ضبط الحقول التابعة عند تغيير حقل أب
       if (field === 'region') {
         updated.province = '';
         updated.commune = '';
         updated.nom_douar = '';
-      } else if (field === 'province') {
+      } 
+      else if (field === 'province') {
         updated.commune = '';
         updated.nom_douar = '';
-      } else if (field === 'commune') {
+      } 
+      else if (field === 'commune') {
         updated.nom_douar = '';
       }
       
@@ -149,13 +166,11 @@ const App: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    // التحقق من الحقول الإدارية المطلوبة
     if (!formData.region || !formData.province || !formData.commune || !formData.nom_douar) {
-      setError('يرجى اختيار الموقع الإداري (الجهة، الإقليم، الجماعة، الدوار) بالكامل');
+      setError('يرجى اختيار التموقع الإداري بالكامل');
       return;
     }
     
-    // التحقق من الحقول الوصفية
     if (!formData.nature_dommages || !formData.besoins_essentiels || !formData.numero_telephone) {
       setError('يرجى ملء كافة تفاصيل الأضرار والاحتياجات ورقم الهاتف');
       return;
@@ -168,7 +183,6 @@ const App: React.FC = () => {
     if (result.success) {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 4000);
-      // تصفير الحقول بعد الإرسال مع الحفاظ على التموقع الإداري لسرعة التبليغ التالي إذا كان في نفس المنطقة
       setFormData(prev => ({ 
         ...prev, 
         nature_dommages: '', 
@@ -198,7 +212,7 @@ const App: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="bg-rose-50 text-rose-600 px-2 sm:px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1.5">
                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">منصة تنسيق</span>
+                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">صفحة غير رسمية</span>
               </div>
               
               <button 
@@ -267,7 +281,7 @@ const App: React.FC = () => {
                  </div>
               </div>
 
-              <SectionCard title="التموقع الإداري" number="1.">
+              <SectionCard title="التموقع الإداري الهرمي" number="1.">
                 {dataLoading ? (
                   <div className="md:col-span-2 flex justify-center py-6"><Loader2 className="animate-spin text-rose-500" /></div>
                 ) : (
@@ -277,7 +291,7 @@ const App: React.FC = () => {
                       options={regions} 
                       value={formData.region} 
                       onChange={(v) => updateField('region', v)} 
-                      placeholder="اختر الجهة من القائمة..."
+                      placeholder="اختر الجهة..."
                       required 
                       strict
                     />
@@ -286,7 +300,7 @@ const App: React.FC = () => {
                       options={provinces} 
                       value={formData.province} 
                       onChange={(v) => updateField('province', v)} 
-                      placeholder={formData.region ? "اختر الإقليم..." : "يرجى اختيار الجهة أولاً"} 
+                      placeholder={formData.region ? "اختر الإقليم..." : "يجب اختيار الجهة أولاً"} 
                       disabled={!formData.region}
                       required 
                       strict
@@ -296,7 +310,7 @@ const App: React.FC = () => {
                       options={communes} 
                       value={formData.commune} 
                       onChange={(v) => updateField('commune', v)} 
-                      placeholder={formData.province ? "اختر الجماعة..." : "يرجى اختيار الإقليم أولاً"} 
+                      placeholder={formData.province ? "اختر الجماعة..." : "يجب اختيار الإقليم أولاً"} 
                       disabled={!formData.province}
                       required 
                       strict
@@ -306,7 +320,7 @@ const App: React.FC = () => {
                       options={douars} 
                       value={formData.nom_douar} 
                       onChange={(v) => updateField('nom_douar', v)} 
-                      placeholder={formData.commune ? "اختر الدوار أو اكتب اسماً جديداً..." : "يرجى اختيار الجماعة أولاً"} 
+                      placeholder={formData.commune ? "اختر الدوار..." : "يجب اختيار الجماعة أولاً"} 
                       disabled={!formData.commune}
                       required 
                       strict={false} 
@@ -315,7 +329,7 @@ const App: React.FC = () => {
                 )}
               </SectionCard>
 
-              <SectionCard title="تفاصيل الحالة الميدانية" number="2.">
+              <SectionCard title="تفاصيل الحالة والخطورة" number="2.">
                 <div className="md:col-span-2 space-y-3">
                   <label className="text-[13px] font-bold text-slate-500">مستوى الاستعجال</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -323,7 +337,7 @@ const App: React.FC = () => {
                       const isActive = formData.niveau_urgence === UrgencyLevel[level];
                       const labels = { LOW: '1- منخفض', MEDIUM: '2- متوسط', HIGH: '3- مرتفع', CRITICAL: '4- حرج جداً' };
                       return (
-                        <button key={level} type="button" onClick={() => updateField('niveau_urgence', UrgencyLevel[level])}
+                        <button key={level} type="button" onClick={() => updateField('niveau_urgence', UrgencyLevel[level] as any)}
                           className={`py-4 rounded-xl text-[11px] font-bold border transition-all ${isActive ? "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"}`}
                         >
                           {labels[level]}
@@ -347,107 +361,106 @@ const App: React.FC = () => {
             </form>
           </main>
         </>
-      ) : currentView === 'map' ? (
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col">
-          <header className="mb-6 text-right">
-             <div className="flex justify-between items-end">
-                <button onClick={loadLogs} disabled={logsLoading} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
-                  {logsLoading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                  تحديث الخريطة
-                </button>
-                <div className="text-right">
-                  <h1 className="text-2xl font-black text-slate-800">تحليل المناطق المغمورة</h1>
-                  <p className="text-sm text-slate-500 font-medium">رصد المناطق المتضررة والتدخلات الميدانية</p>
-                </div>
-             </div>
-          </header>
-          <div className="flex-1 min-h-[600px] bg-white rounded-[2.5rem] overflow-hidden shadow-xl border border-slate-100">
-            <MapDashboard logs={submittedLogs} userLat={parseFloat(formData.latitude)} userLng={parseFloat(formData.longitude)} />
-          </div>
-        </main>
       ) : (
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <header className="mb-10 text-right">
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-              <div className="order-2 md:order-1 flex items-center gap-2 w-full md:w-auto flex-wrap">
-                <div className="relative flex-1 min-w-[200px] md:w-64">
-                  <input 
-                    type="text"
-                    placeholder="بحث في السجل..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl py-3 pr-10 pl-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-rose-400 outline-none transition-all shadow-sm"
-                  />
-                  <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="flex-1 flex flex-col">
+          {currentView === 'map' ? (
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-10 flex flex-col">
+              <header className="mb-6 text-right">
+                 <div className="flex justify-between items-end">
+                    <button onClick={loadLogs} disabled={logsLoading} className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-xl font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                      {logsLoading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                      تحديث الخريطة
+                    </button>
+                    <div className="text-right">
+                      <h1 className="text-2xl font-black text-slate-800">تحليل المناطق المغمورة</h1>
+                      <p className="text-sm text-slate-500 font-medium">رصد المناطق المتضررة والتدخلات الميدانية</p>
+                    </div>
+                 </div>
+              </header>
+              <div className="flex-1 min-h-[600px] bg-white rounded-[2.5rem] overflow-hidden shadow-xl border border-slate-100">
+                <MapDashboard logs={submittedLogs} userLat={parseFloat(formData.latitude)} userLng={parseFloat(formData.longitude)} />
+              </div>
+            </main>
+          ) : (
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-10">
+              <header className="mb-10 text-right">
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                  <div className="order-2 md:order-1 flex items-center gap-2 w-full md:w-auto flex-wrap">
+                    <div className="relative flex-1 min-w-[200px] md:w-64">
+                      <input 
+                        type="text"
+                        placeholder="بحث في السجل..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl py-3 pr-10 pl-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-rose-400 outline-none transition-all shadow-sm"
+                      />
+                      <Search size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    </div>
+                    <button 
+                      onClick={loadLogs} 
+                      disabled={logsLoading} 
+                      className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-black text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {logsLoading ? <Loader2 size={16} className="animate-spin text-rose-500" /> : <RefreshCw size={16} className="text-rose-500" />}
+                      تحديث المعطيات
+                    </button>
+                  </div>
+                  <div className="order-1 md:order-2 text-right">
+                    <h1 className="text-3xl font-black text-slate-800 mb-2">سجل الإغاثة الميداني</h1>
+                    <p className="text-slate-500 font-medium">إجمالي البلاغات المسجلة: {filteredLogs.length}</p>
+                  </div>
                 </div>
-                <button 
-                  onClick={loadLogs} 
-                  disabled={logsLoading} 
-                  className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-black text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  {logsLoading ? <Loader2 size={16} className="animate-spin text-rose-500" /> : <RefreshCw size={16} className="text-rose-500" />}
-                  تحديث المعطيات
-                </button>
-              </div>
-              <div className="order-1 md:order-2 text-right">
-                <h1 className="text-3xl font-black text-slate-800 mb-2">سجل الإغاثة الميداني</h1>
-                <p className="text-slate-500 font-medium">إجمالي البلاغات المسجلة: {filteredLogs.length}</p>
-              </div>
-            </div>
-          </header>
+              </header>
 
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-            <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-right border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-900 border-b border-slate-100">
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الجهة / الإقليم</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الجماعة / الدوار</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الخطورة</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الأضرار</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الاحتياجات</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">التواصل</th>
-                    <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الموقع</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100/50">
-                  {filteredLogs.map((log, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-5">
-                        <div className="text-sm font-bold text-slate-800">{log.region}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{log.province}</div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="text-sm font-bold text-slate-800">{log.commune}</div>
-                        <div className="text-xs text-rose-500 font-bold mt-0.5">{log.douar}</div>
-                      </td>
-                      <td className="px-6 py-5 text-center">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black inline-block ${log.urgency.includes('حرج') || log.urgency.includes('4') ? 'bg-rose-500 text-white' : log.urgency.includes('مرتفع') || log.urgency.includes('3') ? 'bg-orange-500 text-white' : log.urgency.includes('متوسط') || log.urgency.includes('2') ? 'bg-amber-400 text-slate-900' : 'bg-emerald-500 text-white'}`}>
-                          {log.urgency}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5 text-xs text-slate-600 font-medium max-w-[200px]">{log.damage}</td>
-                      <td className="px-6 py-5 text-xs text-slate-600 font-medium max-w-[200px]">{log.needs}</td>
-                      <td className="px-6 py-5">
-                        <a href={`tel:${log.phone}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-xl">
-                          <Phone size={14} /> {log.phone}
-                        </a>
-                      </td>
-                      <td className="px-6 py-5 text-center">
-                        <a href={log.mapLink} target="_blank" className="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-500 hover:bg-[#0f172a] hover:text-white transition-all"><ExternalLink size={18} /></a>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredLogs.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400 font-bold">لا توجد بيانات مطابقة للبحث حالياً</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </main>
+              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-right border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-900 border-b border-slate-100">
+                        <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الجهة / الإقليم</th>
+                        <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الجماعة / الدوار</th>
+                        <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الخطورة</th>
+                        <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الأضرار</th>
+                        <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الاحتياجات</th>
+                        <th className="px-6 py-5 text-sm font-black whitespace-nowrap">التواصل</th>
+                        <th className="px-6 py-5 text-sm font-black whitespace-nowrap">الموقع</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100/50">
+                      {filteredLogs.map((log, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-6 py-5">
+                            <div className="text-sm font-bold text-slate-800">{log.region}</div>
+                            <div className="text-xs text-slate-500 mt-0.5">{log.province}</div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="text-sm font-bold text-slate-800">{log.commune}</div>
+                            <div className="text-xs text-rose-500 font-bold mt-0.5">{log.douar}</div>
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black inline-block ${log.urgency.includes('حرج') || log.urgency.includes('4') ? 'bg-rose-500 text-white' : log.urgency.includes('مرتفع') || log.urgency.includes('3') ? 'bg-orange-500 text-white' : log.urgency.includes('متوسط') || log.urgency.includes('2') ? 'bg-amber-400 text-slate-900' : 'bg-emerald-500 text-white'}`}>
+                              {log.urgency}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-xs text-slate-600 font-medium max-w-[200px]">{log.damage}</td>
+                          <td className="px-6 py-5 text-xs text-slate-600 font-medium max-w-[200px]">{log.needs}</td>
+                          <td className="px-6 py-5">
+                            <a href={`tel:${log.phone}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-xl">
+                              <Phone size={14} /> {log.phone}
+                            </a>
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                            <a href={log.mapLink} target="_blank" className="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-500 hover:bg-[#0f172a] hover:text-white transition-all"><ExternalLink size={18} /></a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </main>
+          )}
+        </div>
       )}
 
       {/* أيقونة الخريطة العائمة */}

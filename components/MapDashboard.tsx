@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { SubmissionRow } from '../services/data';
+import { ExternalLink, Layers, Navigation } from 'lucide-react';
 
 interface MapDashboardProps {
   logs: SubmissionRow[];
@@ -97,14 +98,41 @@ export const MapDashboard: React.FC<MapDashboardProps> = ({ logs, userLat, userL
   return (
     <div className="relative h-full w-full bg-slate-100">
       <div ref={mapContainerRef} id="map" className="h-full w-full" />
-      <div className="absolute top-4 right-4 z-[1000] bg-white/70 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-white/20 max-w-[240px]">
-        <h3 className="text-[11px] font-black text-slate-800 mb-3 text-right">مفتاح الخريطة</h3>
-        <div className="flex flex-col gap-2.5 text-right">
-           <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-600">
-              مناطق مغمورة <div className="w-3 h-3 rounded bg-blue-500/60 shadow-sm border border-blue-400"></div>
-           </div>
+      
+      {/* التحكم والأدوات على الخريطة */}
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-3 max-w-[260px]">
+        {/* مفتاح الخريطة */}
+        <div className="bg-white/90 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-white/20">
+          <h3 className="text-[11px] font-black text-slate-800 mb-3 text-right flex items-center justify-end gap-2">
+            مفتاح الخريطة <Layers size={14} className="text-blue-500" />
+          </h3>
+          <div className="flex flex-col gap-2.5 text-right">
+             <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-600">
+                مناطق مهددة بالفيضان <div className="w-3 h-3 rounded bg-blue-500/60 shadow-sm border border-blue-400"></div>
+             </div>
+             <div className="flex items-center justify-end gap-2 text-[10px] font-bold text-slate-600">
+                بلاغات مستعجلة <div className="w-3 h-3 rounded-full bg-rose-500 shadow-sm border border-white"></div>
+             </div>
+          </div>
+          <div className="mt-4 pt-2 border-t border-slate-200 text-[9px] text-slate-400 font-bold text-center italic">الزووم مثبت عند 12 لبيانات الفيضان</div>
         </div>
-        <div className="mt-4 pt-2 border-t border-slate-200 text-[9px] text-slate-400 font-bold text-center italic">الزووم مثبت عند 12</div>
+
+        {/* زر الخريطة الخارجية (رابط النافذة الجديدة) */}
+        <a 
+          href="https://geotoposig.com/zones_inondables/12/zones_inondables.html" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="bg-[#0f172a] text-white p-4 rounded-2xl shadow-xl flex items-center justify-center gap-3 hover:bg-slate-800 transition-all active:scale-95 group border border-slate-700"
+        >
+          <div className="bg-blue-500 p-1.5 rounded-lg text-white">
+            <Navigation size={14} />
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-black uppercase tracking-tight">فتح الخريطة الكاملة</span>
+            <span className="text-[8px] opacity-60 font-bold">نافذة تفاعلية مستقلة</span>
+          </div>
+          <ExternalLink size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform ml-auto" />
+        </a>
       </div>
     </div>
   );

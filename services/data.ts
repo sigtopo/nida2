@@ -19,11 +19,14 @@ export interface SubmissionRow {
   mapLink: string;
 }
 
-// الرابط الجديد لبيانات الإدارة (الجهة، الإقليم، الجماعة، الدوار)
-const ADMIN_DATA_URL = 'https://docs.google.com/spreadsheets/d/1EWdDVYYX7P5TcZElS54N6V49sCTJ5gnVkrgvhN1B9M4/export?format=csv';
+// الرابط المحدث لبيانات الإدارة (الجهة، الإقليم، الجماعة، الدوار) بناءً على طلب المستخدم الأخير
+const ADMIN_DATA_URL = 'https://docs.google.com/spreadsheets/d/1EWdDVYYX7P5TcZElS54N6V49sCTJ5gnVkrgvhN1B9M4/export?format=csv&gid=1269566974';
 // رابط سجل البيانات (المعطيات المرسلة)
 const LOG_DATA_URL = 'https://docs.google.com/spreadsheets/d/1Hsk6Ja7yB8ELZG8jj_C5zQQrc7p6s2n2aX-pml89f3k/export?format=csv';
 
+/**
+ * وظيفة لتحليل أسطر CSV مع مراعاة الفواصل داخل الاقتباسات
+ */
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let cell = '';
@@ -41,17 +44,19 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
+/**
+ * جلب وتطهير البيانات الإدارية
+ */
 export const fetchAdminData = async (): Promise<AdminRow[]> => {
   try {
-    const response = await fetch(ADMIN_DATA_URL);
+    const response = await fetch(`${ADMIN_DATA_URL}&cache_bust=${Date.now()}`); 
     if (!response.ok) throw new Error('Failed to fetch admin data');
     const text = await response.text();
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
     
-    // الترتيب حسب الأعمدة في الملف: 
-    // 0: Région, 1: Préfecture / Province, 2: Commune, 3: Douar
     return lines.slice(1).map(line => {
       const cols = parseCSVLine(line);
+      // الترتيب: 0: الجهة، 1: الإقليم، 2: الجماعة، 3: الدوار
       return { 
         region: (cols[0] || '').trim(), 
         province: (cols[1] || '').trim(), 
@@ -67,7 +72,7 @@ export const fetchAdminData = async (): Promise<AdminRow[]> => {
 
 export const fetchSubmittedLogs = async (): Promise<SubmissionRow[]> => {
   try {
-    const response = await fetch(LOG_DATA_URL);
+    const response = await fetch(`${LOG_DATA_URL}&t=${Date.now()}`);
     if (!response.ok) throw new Error('Failed to fetch submitted logs');
     const text = await response.text();
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
