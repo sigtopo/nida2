@@ -127,24 +127,36 @@ const App: React.FC = () => {
       {/* النافذة الترحيبية */}
       {showWelcome && <WelcomePopup onClose={() => setShowWelcome(false)} />}
 
-      <nav className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-[1001] shadow-sm">
+      <nav className="bg-white border-b border-slate-100 px-4 sm:px-6 py-4 sticky top-0 z-[1001] shadow-sm">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentView('form')}>
               <div className="bg-rose-500 p-1.5 rounded-lg text-white">
                 <ShieldAlert size={20} />
               </div>
-              <span className="font-black text-slate-800 tracking-tight">رصد الميدان</span>
+              <span className="font-black text-slate-800 tracking-tight text-sm sm:text-base">رصد الميدان</span>
             </div>
-            <div className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1.5">
-               <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-               <span className="text-[10px] font-black uppercase tracking-tight">صفحة غير رسمية</span>
+            
+            <div className="flex items-center gap-2">
+              <div className="bg-rose-50 text-rose-600 px-2 sm:px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1.5">
+                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight">صفحة غير رسمية</span>
+              </div>
+              
+              <button 
+                onClick={() => setShowWelcome(true)}
+                className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"
+                title="معلومات المنصة"
+              >
+                <Info size={18} />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl">
-             <button onClick={() => setCurrentView('form')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'form' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-rose-500'}`}>التبليغ عن دوار</button>
-             <button onClick={() => setCurrentView('map')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-blue-600'}`}>خريطة الفيضانات</button>
-             <button onClick={() => setCurrentView('dashboard')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'dashboard' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>سجل البيانات</button>
+          
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl w-full sm:w-auto justify-center">
+             <button onClick={() => setCurrentView('form')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'form' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-rose-500'}`}>التبليغ عن دوار</button>
+             <button onClick={() => setCurrentView('map')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-blue-600'}`}>خريطة الفيضانات</button>
+             <button onClick={() => setCurrentView('dashboard')} className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-[10px] font-black transition-all ${currentView === 'dashboard' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>سجل البيانات</button>
           </div>
         </div>
       </nav>
@@ -173,11 +185,16 @@ const App: React.FC = () => {
                     <div className="flex items-center gap-3 text-right overflow-hidden flex-1">
                         <div className="flex flex-col text-right">
                           <span className="text-[13px] font-black text-[#107c41] whitespace-nowrap overflow-hidden text-ellipsis">
-                             الإحداثيات المرصودة
+                             تحديد الإحداثيات (XY)
                           </span>
-                          <span className="text-[10px] font-bold text-emerald-600/80 dir-ltr">
-                             {formData.latitude}, {formData.longitude}
-                          </span>
+                          <div className="flex items-center gap-2 flex-wrap justify-end">
+                            <span className="text-[9px] font-black text-emerald-500 opacity-80 hidden sm:inline">
+                               تم جلب الإحداثيات بنجاح من موقعك
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-600/80 dir-ltr">
+                               {formData.latitude}, {formData.longitude}
+                            </span>
+                          </div>
                         </div>
                         <div className="bg-emerald-500/10 p-2 rounded-xl text-[#107c41] shrink-0">
                           <MapPin size={22} />
@@ -330,25 +347,14 @@ const App: React.FC = () => {
         </main>
       )}
 
-      {/* Persistent Info Button to reopen Welcome Popup (Small size as requested) */}
-      <div className="fixed bottom-24 right-8 z-[1002]">
-        <button 
-          onClick={() => setShowWelcome(true)}
-          className="bg-white text-rose-600 p-2.5 rounded-full shadow-lg border border-rose-100 hover:bg-rose-50 transition-all active:scale-90 flex items-center justify-center"
-          title="معلومات المنصة"
-        >
-          <Info size={16} />
-        </button>
-      </div>
-
-      {/* أيقونة عائمة لفتح خريطة التوزيع التفاعلية */}
-      <div className="fixed bottom-8 left-8 z-[1002]">
+      {/* أيقونة عائمة لفتح خريطة التوزيع التفاعلية - تم تصغيرها وجعلها شفافة */}
+      <div className="fixed bottom-6 left-6 z-[1002]">
         <button 
           onClick={() => setShowDistMap(true)}
-          className="bg-[#0f172a] text-white p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all group flex items-center gap-3"
+          className="bg-blue-500/50 backdrop-blur-md text-white p-3 rounded-full shadow-lg border border-white/20 hover:bg-blue-600/60 active:scale-90 transition-all flex items-center justify-center"
+          title="خريطة التوزيع"
         >
-          <MapIcon size={24} />
-          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 whitespace-nowrap font-black text-xs">خريطة التوزيع</span>
+          <MapIcon size={18} />
         </button>
       </div>
 

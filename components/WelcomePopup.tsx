@@ -76,37 +76,43 @@ export const WelcomePopup: React.FC<WelcomePopupProps> = ({ onClose }) => {
           </div>
 
           <div className="flex flex-col items-center gap-4 pt-4 border-t border-slate-50">
-            {/* Realistic WhatsApp Icon and Number (LTR specified) */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">تواصل مباشرة عبر واتساب</span>
-              <a 
-                href="https://wa.me/212668090285" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 group transition-all"
-              >
-                <div className="p-1 rounded-full bg-slate-50 border border-slate-100 group-hover:bg-green-50 group-hover:border-green-100 transition-colors">
-                  <img 
-                    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
-                    alt="WhatsApp" 
-                    className="w-7 h-7 sm:w-8 sm:h-8" 
-                  />
-                </div>
-                <span className="text-slate-800 font-black text-base sm:text-lg tracking-tight group-hover:text-green-600 transition-colors [direction:ltr]">
-                  +212 668 090 285
-                </span>
-              </a>
+            {/* Developed By Section */}
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">تم تطوير المنصة من طرف</span>
+              
+              <div className="flex items-center gap-4">
+                <a 
+                  href="https://wa.me/212668090285" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 group transition-all"
+                  title="تواصل عبر واتساب"
+                >
+                  <div className="p-1 rounded-full bg-slate-50 border border-slate-100 group-hover:bg-green-50 group-hover:border-green-100 transition-colors">
+                    <img 
+                      src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" 
+                      alt="WhatsApp" 
+                      className="w-6 h-6" 
+                    />
+                  </div>
+                  <span className="text-slate-800 font-black text-sm group-hover:text-green-600 transition-colors">Geojilit</span>
+                </a>
+
+                <a 
+                  href="mailto:jilitsig@gmail.com"
+                  className="text-slate-500 font-bold text-[11px] hover:text-rose-500 transition-colors flex items-center gap-1.5 bg-slate-50 px-3 py-1 rounded-full border border-slate-100"
+                >
+                  <Mail size={12} />
+                  jilitsig@gmail.com
+                </a>
+              </div>
             </div>
-            
-            <div className="flex flex-col items-center gap-1 mt-2">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">أو عبر البريد الإلكتروني</span>
-              <a 
-                href="mailto:jilitsig@gmail.com"
-                className="text-slate-500 font-bold text-[11px] hover:text-rose-500 transition-colors flex items-center gap-1.5"
-              >
-                <Mail size={12} />
-                jilitsig@gmail.com
-              </a>
+
+            {/* Copyright Section */}
+            <div className="mt-4 pt-4 border-t border-slate-50 w-full text-center">
+              <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] select-none">
+                copyright 2026 geojilit v1.02
+              </p>
             </div>
           </div>
         </div>
