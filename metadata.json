@@ -1,0 +1,7 @@
+{
+  "name": "Field Data Collector",
+  "description": "تطبيق ميداني لجمع المعطيات وتوثيق الأضرار والاحتياجات في المناطق المتضررة وإرسالها مباشرة إلى جداول بيانات جوجل.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

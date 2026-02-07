@@ -1,0 +1,37 @@
+
+export interface AdminRow {
+  region: string;
+  province: string;
+  commune: string;
+  douar: string;
+}
+
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1EWdDVYYX7P5TcZElS54N6V49sCTJ5gnVkrgvhN1B9M4/export?format=csv';
+
+export const fetchAdminData = async (): Promise<AdminRow[]> => {
+  try {
+    const response = await fetch(SHEET_CSV_URL);
+    const text = await response.text();
+    
+    // Simple CSV parser (assuming no commas inside quotes for this specific data)
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    const rows: AdminRow[] = [];
+    
+    // Skip header (Region, Province, Commune, Douar)
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(c => c.replace(/^"(.*)"$/, '$1').trim());
+      if (cols.length >= 4) {
+        rows.push({
+          region: cols[0],
+          province: cols[1],
+          commune: cols[2],
+          douar: cols[3]
+        });
+      }
+    }
+    return rows;
+  } catch (error) {
+    console.error('Error fetching administrative data:', error);
+    return [];
+  }
+};
